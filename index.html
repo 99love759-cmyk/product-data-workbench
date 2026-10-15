@@ -2,16 +2,16 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#080f1e">
+  <meta name="theme-color" content="#f5f5f7">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'">
   <meta name="data-mode" content="cloud"><meta name="robots" content="noindex,nofollow">
   <title>产品数据工作台</title>
-  <link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./theme.css">
-  <script type="module" src="./app.js"></script>
+  <link rel="icon" href="./favicon.svg?v=6"><link rel="stylesheet" href="./styles.css?v=6"><link rel="stylesheet" href="./theme.css?v=6">
+  <script type="module" src="./app.js?v=6"></script>
 </head>
 <body>
   <aside class="sidebar">
-    <a class="brand" href="#overview"><img src="./favicon.svg" width="39" height="39" alt=""><span>产品数据工作台<small>PRODUCT INTELLIGENCE</small></span></a>
+    <a class="brand" href="#overview"><img src="./favicon.svg?v=6" width="39" height="39" alt=""><span>产品数据工作台<small>PRODUCT INTELLIGENCE</small></span></a>
     <div class="nav-caption">工作空间</div>
     <nav aria-label="主导航">
       <button data-page="overview" class="nav-item active"><span data-icon="grid"></span>数据概览</button>
@@ -25,7 +25,7 @@
   <div class="workspace">
     <header class="topbar"><div class="breadcrumb">工作空间 <span>/</span> <strong id="breadcrumb">数据概览</strong></div><div class="top-actions"><a class="source-link" id="source-link" href="#" target="_blank" rel="noreferrer">查看原始表格 <span data-icon="external"></span></a><span class="top-divider"></span><span class="local-status"><i></i> 企业微信数据</span></div></header>
     <main id="main">
-      <div class="page-heading"><div><div class="eyebrow">LIVE COMMERCE · PRODUCT INTELLIGENCE</div><h1 id="page-title">产品数据概览<span class="heading-dot">.</span></h1><p id="page-subtitle">从产品表现到直播间转化，把每一场销售看清楚。</p></div><div class="heading-actions"><button id="show-history" class="button outline"><span data-icon="orders"></span>历史回看</button><button id="show-report" class="button report-button"><span data-icon="download"></span>生成报告</button><button id="refresh" class="button primary"><span data-icon="refresh"></span><span>刷新最新数据</span></button></div></div>
+      <div class="page-heading"><div><div class="eyebrow">PRODUCT INSIGHTS</div><h1 id="page-title">产品数据概览<span class="heading-dot">.</span></h1><p id="page-subtitle">从产品表现到直播间转化，把每一场销售看清楚。</p></div><div class="heading-actions"><button id="show-history" class="button outline"><span data-icon="orders"></span>历史回看</button><button id="show-report" class="button report-button"><span data-icon="download"></span>生成报告</button><button id="refresh" class="button primary"><span data-icon="refresh"></span><span>刷新最新数据</span></button></div></div>
       <div id="sync-bar" class="sync-bar" role="status" aria-live="polite"><span class="sync-icon"></span><span id="sync-message">正在加载数据…</span><span id="sync-time"></span></div>
       <nav id="business-tabs" class="business-tabs" aria-label="业务切换"></nav>
       <section id="global-filters" class="filters" aria-label="筛选条件">
