@@ -42,7 +42,6 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
 [data-theme=light] .metric-label,[data-theme=light] .metric-note,[data-theme=light] .panel-header p,[data-theme=light] .panel-footnote,[data-theme=light] .page-heading p,[data-theme=light] .sync-bar,[data-theme=light] #sync-time,[data-theme=light] .range-tools,[data-theme=light] .range-tools button,[data-theme=light] .chart-legend,[data-theme=light] .filters label>span,[data-theme=light] .date-filter label>span,[data-theme=light] .insight-label,[data-theme=light] .insight small,[data-theme=light] .insight em,[data-theme=light] th,[data-theme=light] .product-cell small,[data-theme=light] .text-muted,[data-theme=light] .table-footer,[data-theme=light] .section-note,[data-theme=light] .board-head p,[data-theme=light] .board-hero small,[data-theme=light] .board-metric-grid small,[data-theme=light] .board-metric-grid em,[data-theme=light] .board-rate-caption,[data-theme=light] .board-note,[data-theme=light] .board-table-scroll th,[data-theme=light] .field small,[data-theme=light] .form-intro,[data-theme=light] .field details summary,[data-theme=light] .history-scope small,[data-theme=light] .history-scope p,[data-theme=light] .formula,[data-theme=light] .result-label,[data-theme=light] .result-value small,[data-theme=light] .result-stats small,[data-theme=light] .result-subtitle,[data-theme=light] .mini-note,[data-theme=light] .sample-row small,[data-theme=light] .definition p,[data-theme=light] .sheet-row small,[data-theme=light] .dialog-head p,[data-theme=light] .history-day small,[data-theme=light] .stock-components td[data-label]:before{color:#62798f}
 [data-theme=light] .trend-chart text{fill:#62798f}[data-theme=light] .history-scope .scope-title,[data-theme=light] .sample-row strong,[data-theme=light] .result-stats strong{color:#315f80}[data-theme=light] .report-text{color:#385b79}
 
-.access-dialog{width:min(420px,calc(100vw - 32px));padding:34px;border:1px solid #dce5ef;border-radius:18px;background:#fff;color:#14243b;box-shadow:0 20px 100px #0005}.access-dialog::backdrop{background:#0a142be8;backdrop-filter:blur(8px)}.access-dialog form{display:flex;flex-direction:column;gap:12px}.access-dialog h2{margin:8px 0 0;font-size:26px;line-height:1.4}.access-dialog p{color:#62758c;font-size:14px;line-height:1.7;margin:0}.access-dialog label{font-size:14px;font-weight:600;margin-top:10px}.access-dialog input{width:100%;min-height:48px;padding:12px;border-radius:8px;background:#fff;color:#14243b;border:1px solid #cbd8e7;font:inherit}.access-dialog input:focus{outline:2px solid #216bc455;border-color:#216bc4}.access-dialog .button{width:100%;justify-content:center;background:#216bc4;color:white;min-height:46px}.access-dialog small{color:#62758c;font-size:12px;line-height:1.7;margin-top:6px}.access-dialog .access-error{color:#bd3446}.access-mark{width:44px;height:44px;display:grid;place-items:center;border-radius:12px;background:#e8f2ff;color:#216bc4;font-size:28px}@media(max-width:480px){.access-dialog{padding:26px}.access-dialog h2{font-size:24px}}
 
 /* Appearance 6: quiet surfaces, generous spacing and color with a clear purpose. */
 :root,:root[data-theme=light]{
@@ -300,15 +299,6 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
 [data-theme] .empty-state h2{color:var(--text)}
 [data-theme] .chart-empty,[data-theme] .loading-card{color:var(--muted)}
 [data-theme] .loader{border-color:var(--line);border-top-color:var(--primary)}
-[data-theme] .access-dialog{width:min(440px,calc(100vw - 32px));padding:38px;background:var(--paper);color:var(--text);border:0;border-radius:28px}
-[data-theme] .access-dialog::backdrop{background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(14px)}
-[data-theme] .access-dialog h2{font-size:27px;letter-spacing:-.7px}
-[data-theme] .access-dialog p,[data-theme] .access-dialog small{color:var(--muted)}
-[data-theme] .access-dialog label{font-size:13px;color:var(--text)}
-[data-theme] .access-dialog input{background:var(--paper);color:var(--text);border:1px solid var(--line);border-radius:12px}
-[data-theme] .access-dialog .button{border-radius:22px}
-[data-theme] .access-dialog .access-error{color:#d34243}
-[data-theme] .access-mark{background:linear-gradient(135deg,var(--blue-soft),var(--purple-soft));color:var(--blue);border-radius:14px}
 @media(max-width:1200px){
  [data-theme] .sidebar{padding-inline:25px;gap:14px}
  [data-theme] .sidebar .brand{font-size:22px}
@@ -443,7 +433,6 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
  [data-theme] .history-day small{font-size:10px}
  [data-theme] .history-day-action{font-size:10px}
  [data-theme] footer{font-size:9px;padding-block:28px}
- [data-theme] .access-dialog{padding:30px}
 }
 @media(max-width:370px){
  [data-theme] .sidebar{padding-inline:16px;gap:14px}
@@ -465,7 +454,6 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
  [data-theme] .range-tools>div{align-self:end}
  [data-theme] .stock-result{padding:24px}
  [data-theme] .result-stats strong{font-size:17px}
- [data-theme] .access-dialog h2{font-size:24px}
 }
 @media(prefers-reduced-motion:reduce){[data-theme] *{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 
