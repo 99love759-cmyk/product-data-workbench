@@ -21,7 +21,7 @@ async function unlock(envelope){
   }catch{}
   return new Promise(resolve=>{
     const dialog=document.createElement('dialog');dialog.className='access-dialog';
-    dialog.innerHTML='<form><div class="access-mark">▥</div><h2>产品数据工作台</h2><p>输入访问密码，查看产品表现与备货建议。</p><label for="access-password">访问密码</label><input id="access-password" name="password" type="password" autocomplete="current-password" maxlength="128" required placeholder="请输入分享人提供的密码"><p class="access-error" role="alert"></p><button class="button primary" type="submit">进入工作台</button><small>数据更新后会自动载入；本页不需要分享人的电脑在线。</small></form>';
+    dialog.innerHTML='<form><div class="access-mark">▥</div><h2>产品数据工作台</h2><p>输入访问密码，查看产品表现与备货建议。</p><label for="access-password">访问密码</label><input id="access-password" name="password" type="password" autocomplete="current-password" maxlength="128" required placeholder="请输入分享人提供的密码"><p class="access-error" role="alert"></p><button class="button primary" type="submit">进入工作台</button><small>打开时自动同步最新发布数据，无需分享人的电脑在线。</small></form>';
     dialog.addEventListener('cancel',e=>e.preventDefault());
     document.body.append(dialog);dialog.showModal();
     const form=dialog.querySelector('form'),button=form.querySelector('button'),input=form.querySelector('input'),error=form.querySelector('.access-error');
@@ -39,9 +39,11 @@ async function unlock(envelope){
 }
 
 async function jsonRequest(url,options){
-  const response=await fetch(url,{cache:'no-store',...options});
-  if(!response.ok)throw Error(cloud?'无法读取云端数据，请检查网络后重试。':'无法连接本机服务，请重新打开启动文件。');
-  return response.json();
+  try{
+    const response=await fetch(url,{cache:'no-store',...options});
+    if(!response.ok)throw Error();
+    return await response.json();
+  }catch{throw Error(cloud?'无法读取云端数据，请检查网络后重试。':'无法连接本机服务，请重新打开启动文件。');}
 }
 
 export async function requestData(){
