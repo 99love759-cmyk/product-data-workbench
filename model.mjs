@@ -153,20 +153,33 @@ export function predict(dataset,input) {
  const grouped=new Map();
  for(const r of samples) {const key=`${r.date}|${r.time}|${r.anchor}`; if(!grouped.has(key))grouped.set(key,{...r,orders:0,peak:0,ids:[],rooms:[],mechanisms:[]});const o=grouped.get(key);o.orders+=r.orders;o.peak+=r.peak;o.ids.push(r.id);o.rooms=[...new Set([...o.rooms,...r.rooms])];o.mechanisms=[...new Set([...o.mechanisms,r.mechanism])];}
  const observations=[...grouped.values()].map(r=>({...r,rate:r.orders/r.peak})).sort((a,b)=>b.date.localeCompare(a.date));
- const historicalRate=observations.length?sum(observations.map(r=>r.orders))/sum(observations.map(r=>r.peak)):null;
+ // Give independent broadcasts equal weight, then trim both rate tails so one
+ // exceptional sale cannot dominate replenishment. With 3–4 broadcasts the
+ // middle 1–2 remain; otherwise trim floor(20% * n) from each side. This is a
+ // planning rule, not a test that declares the original sales data erroneous.
+ const rawMeanRate=observations.length?sum(observations.map(r=>r.rate))/observations.length:null;
+ const weightedRate=observations.length?sum(observations.map(r=>r.orders))/sum(observations.map(r=>r.peak)):null;
+ const sufficient=observations.length>=3;
+ const trimEachSide=sufficient?Math.max(1,Math.floor(observations.length*.2)):0;
+ const ranked=observations.toSorted((a,b)=>a.rate-b.rate);
+ ranked.forEach((r,i)=>r.baselineRole=!sufficient?'insufficient':i<trimEachSide?'trimmed-low':i>=ranked.length-trimEachSide?'trimmed-high':'included');
+ const retained=observations.filter(r=>r.baselineRole==='included');
+ const historicalRate=retained.length?sum(retained.map(r=>r.rate))/retained.length:null;
+ const baseline={method:'per-session-trimmed-mean',label:'历史稳健平均',minimumSamples:3,trimFraction:.2,trimEachSide,usedCount:retained.length,trimmedCount:trimEachSide*2,sufficient,rawMeanRate,weightedRate};
  const chosenRate=customRate!==null?number(customRate):historicalRate;
  const peaks=observations.map(r=>r.peak).sort((a,b)=>a-b);
  const suggestedAudience=peaks.length?(peaks.length%2?peaks[Math.floor(peaks.length/2)]:(peaks[peaks.length/2-1]+peaks[peaks.length/2])/2):null;
  const chosenAudience=audience!==null?number(audience):suggestedAudience;
  const dates=observations.map(r=>r.date).sort();
- const result={product,scope:'all-history',mechanism:mechanism.mechanism,mechanismKey:mechanism.mechanismKey,samples:observations.map(r=>({date:r.date,time:r.time,anchor:r.anchor,orders:r.orders,peak:r.peak,rate:r.rate,ids:r.ids,rooms:r.rooms,mechanisms:r.mechanisms})),recordCount:samples.length,roomCount:new Set(samples.flatMap(r=>r.rooms)).size,anchorCount:new Set(samples.map(r=>r.anchor).filter(Boolean)).size,historyOrders:sum(samples.map(r=>r.orders)),dateRange:{from:dates[0]??null,to:dates.at(-1)??null},excluded:all.length-samples.length,historicalRate,rate:chosenRate,suggestedAudience,audience:chosenAudience,customRate:customRate!==null};
- if(chosenRate===null)return {...result,error:'该产品暂无完整的历史订单和峰值数据，请填写预计峰值人数和自定订单转化率。'};
+ const result={product,scope:'all-history',mechanism:mechanism.mechanism,mechanismKey:mechanism.mechanismKey,samples:observations.map(r=>({date:r.date,time:r.time,anchor:r.anchor,orders:r.orders,peak:r.peak,rate:r.rate,ids:r.ids,rooms:r.rooms,mechanisms:r.mechanisms,baselineRole:r.baselineRole})),baseline,recordCount:samples.length,roomCount:new Set(samples.flatMap(r=>r.rooms)).size,anchorCount:new Set(samples.map(r=>r.anchor).filter(Boolean)).size,historyOrders:sum(samples.map(r=>r.orders)),dateRange:{from:dates[0]??null,to:dates.at(-1)??null},excluded:all.length-samples.length,historicalRate,rate:chosenRate,suggestedAudience,audience:chosenAudience,customRate:customRate!==null};
+ if(customRate!==null&&chosenRate===null)return {...result,error:'手动转化率应为大于或等于 0 的数字。'};
+ if(chosenRate===null)return {...result,error:observations.length?`目前仅 ${observations.length} 场有效历史，无法判断是否存在偶发爆单。至少 3 场才自动计算；请补充历史，或在左侧输入经确认的转化率。`:'该产品暂无完整的历史订单和峰值数据，请填写预计峰值人数和手动转化率。'};
  if(chosenAudience===null||chosenAudience<=0)return {...result,error:'请填写大于 0 的预计峰值在线人数。'};
  const margin=number(buffer);if(margin===null||margin>200)return {...result,error:'安全余量应为 0%–200%。'};
- const expectedOrders=Math.ceil(chosenAudience*chosenRate-1e-9);
+ const expectedOrders=Math.max(0,Math.ceil(chosenAudience*chosenRate-1e-9));
  if(mechanism.components.some(c=>quantities[c.name]!==undefined&&(!Number.isInteger(number(quantities[c.name]))||number(quantities[c.name])<=0)))return {...result,error:'每单发货数量应为正整数。'};
  if(mechanism.components.some(c=>stock[c.name]!==undefined&&(!Number.isInteger(number(stock[c.name]))||number(stock[c.name])<0)))return {...result,error:'可用库存应为非负整数。'};
- const components=mechanism.components.map(c=>{const quantity=number(quantities[c.name])??c.quantity,demand=expectedOrders*quantity,target=Math.ceil(demand*(1+margin/100)-1e-9),available=number(stock[c.name])??0;return {name:c.name,supplier:c.supplier,quantity,demand,target,stock:available,purchase:Math.max(0,target-available)};});
- const rates=observations.map(r=>r.rate).sort((a,b)=>a-b);
- return {...result,buffer:margin,expectedOrders:Math.ceil(expectedOrders),components,lowerOrders:rates.length>=2?Math.ceil(chosenAudience*rates[0]):null,upperOrders:rates.length>=2?Math.ceil(chosenAudience*rates.at(-1)):null};
+ const components=mechanism.components.map(c=>{const quantity=number(quantities[c.name])??c.quantity,demand=expectedOrders*quantity,target=Math.max(0,Math.ceil(demand*(1+margin/100)-1e-9)),available=number(stock[c.name])??0;return {name:c.name,supplier:c.supplier,quantity,demand,target,stock:available,purchase:Math.max(0,target-available)};});
+ const rates=retained.map(r=>r.rate).sort((a,b)=>a-b);
+ return {...result,buffer:margin,expectedOrders:Math.ceil(expectedOrders),components,lowerOrders:customRate===null&&rates.length>=2?Math.max(0,Math.ceil(chosenAudience*rates[0]-1e-9)):null,upperOrders:customRate===null&&rates.length>=2?Math.max(0,Math.ceil(chosenAudience*rates.at(-1)-1e-9)):null};
 }
