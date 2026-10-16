@@ -118,6 +118,29 @@ export function summarize(records) {
 
 // System-level views use only explicitly recorded system figures. A source
 // aggregate is never allocated across systems or counted again in each group.
+function sessionPeakSummary(rows) {
+ const sessions=new Map(),unidentified=new Set();
+ for(const r of rows){
+  if(!r.date||!r.time){unidentified.add(r.id);continue;}
+  const key=JSON.stringify([r.date,r.time,r.anchor||'']);
+  if(!sessions.has(key))sessions.set(key,{key,date:r.date,time:r.time,anchor:r.anchor,systems:new Map()});
+  const systems=sessions.get(key).systems,room=r.displayRoom;
+  if(!systems.has(room))systems.set(room,{room,peak:null,conflict:false});
+  const system=systems.get(room);
+  if(r.peak!==null&&Number.isFinite(r.peak)&&r.peak>=0){
+   if(system.peak!==null&&system.peak!==r.peak)system.conflict=true;
+   system.peak=system.peak===null?r.peak:Math.max(system.peak,r.peak);
+  }
+ }
+ const observations=[...sessions.values()].map(s=>{
+  const rooms=[...s.systems.values()].sort((a,b)=>a.room.localeCompare(b.room,undefined,{numeric:true}));
+  const missingRooms=rooms.filter(r=>r.peak===null).map(r=>r.room);
+  return {key:s.key,date:s.date,time:s.time,anchor:s.anchor,rooms,missingRooms,peak:missingRooms.length?null:sum(rooms.map(r=>r.peak)),conflictingRooms:rooms.filter(r=>r.conflict).map(r=>r.room)};
+ }).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time)||(a.anchor||'').localeCompare(b.anchor||''));
+ const valid=observations.filter(s=>s.peak!==null);
+ return {averagePeak:valid.length?sum(valid.map(s=>s.peak))/valid.length:null,sessionCount:observations.length,validSessionCount:valid.length,incompleteSessionCount:observations.length-valid.length,unidentifiedRecordCount:unidentified.size,sessions:observations};
+}
+
 export function roomGroups(records,selectedRoom='') {
  const map=new Map();
  for(const record of records) for(const room of record.rooms) {
@@ -128,9 +151,9 @@ export function roomGroups(records,selectedRoom='') {
   systems.get(room).push(viewRecord(record,room));
  }
  return [...map].map(([key,systems])=>{
-  const rooms=[...systems].map(([room,rows])=>({room,records:rows,...summarize(rows)})).sort((a,b)=>a.room.localeCompare(b.room,undefined,{numeric:true}));
+  const rooms=[...systems].map(([room,rows])=>({room,records:rows,...summarize(rows),sessionPeaks:sessionPeakSummary(rows)})).sort((a,b)=>a.room.localeCompare(b.room,undefined,{numeric:true}));
   const rows=rooms.flatMap(r=>r.records);
-  return {key,rooms,records:rows,sourceRecords:new Set(rows.map(r=>r.id)).size,...summarize(rows)};
+  return {key,rooms,records:rows,sourceRecords:new Set(rows.map(r=>r.id)).size,...summarize(rows),sessionPeaks:sessionPeakSummary(rows)};
  }).sort((a,b)=>a.key.localeCompare(b.key));
 }
 
