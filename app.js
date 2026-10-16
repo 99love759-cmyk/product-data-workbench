@@ -1,6 +1,6 @@
-import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=15';
-import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=15';
-import {createPriceModule} from './prices.mjs?v=15';
+import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=17';
+import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=17';
+import {createPriceModule} from './prices.mjs?v=17';
 const $=id=>document.getElementById(id);
 function applyTheme(theme){const light=theme==='light';document.documentElement.dataset.theme=light?'light':'dark';$('theme-toggle').setAttribute('aria-checked',String(light));document.querySelector('meta[name="theme-color"]').content=light?'#f5f5f7':'#101011';try{localStorage.setItem('product-workbench-theme',light?'light':'dark');}catch{}}
 try{applyTheme(localStorage.getItem('product-workbench-theme')||'light');}catch{applyTheme('light');}

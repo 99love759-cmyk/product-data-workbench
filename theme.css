@@ -613,7 +613,7 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
 [data-theme] .proposal-form-hint{padding:14px 17px;border-radius:12px;font-size:11px;line-height:1.8;background:var(--blue-soft);color:var(--blue);margin-bottom:20px}
 [data-theme] .proposal-fields{display:grid;grid-template-columns:1fr 1fr;gap:17px}
 [data-theme] .proposal-fields label{display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--muted);min-width:0}
-[data-theme] .proposal-fields input{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--paper);color:var(--text);font-size:12px}
+[data-theme] .proposal-fields input,[data-theme] .proposal-fields select{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--paper);color:var(--text);font-size:12px}
 [data-theme] .proposal-fields em{font-size:9px;margin-left:8px;font-style:normal;color:var(--orange)}
 [data-theme] .proposal-priority input{background:var(--orange-soft);border-color:color-mix(in srgb,var(--orange) 30%,var(--line))}
 @media(max-width:1150px) and (min-width:851px){[data-theme] .sidebar{display:grid;grid-template-columns:1fr auto;height:auto;gap:12px;padding-block:15px}[data-theme] .sidebar nav{grid-column:1/-1;order:3;margin:0;justify-content:space-between}[data-theme] .theme-toggle{justify-self:end}}
@@ -759,7 +759,7 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
  [data-theme] .dialog-actions>.button{flex:1;min-height:44px}
  [data-theme] .pager button{min-width:40px;min-height:40px}
  [data-theme] .price-row-actions button{min-height:44px;font-size:11px}
- [data-theme] .proposal-fields input{min-height:46px}
+ [data-theme] .proposal-fields input,[data-theme] .proposal-fields select{min-height:46px}
  [data-theme] .price-filters label{min-width:0}
  [data-theme] .price-filters select{width:100%;padding-block:10px}
  [data-theme] .price-search input{height:46px}

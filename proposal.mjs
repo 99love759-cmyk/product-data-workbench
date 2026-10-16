@@ -8,6 +8,7 @@ export const proposalColumns=[
  ['Y','助播身份证国徽面'],['Z','商务对接人'],['AA','商家对接人'],['AB','商家电话'],['AC','付款比例'],['AD','售后期'],['AE','退货方案'],['AF','有效期与保质期']
 ];
 export const proposalImageColumns=new Set(['H','U','X','Y','AC']);
+export const proposalCategories=['悦龄集商品（不限类目）','美妆护肤','食品饮料','日用百货','食疗滋补','家居家纺','医疗健康','厨卫家电','鞋服箱包','珠宝首饰'];
 export function proposalValues(entry,overrides={}){
  const ylj=entry.sheetTitle==='悦龄集',xy=entry.sheetTitle?.startsWith('星跃');
  const values={A:'混场',B:entry.shippingCity||'',C:'全国',D:ylj?'四川万鑫未来科技有限公司':xy?'四川风驰星跃电子商务有限公司':entry.supplier||'',E:ylj?'悦龄集':entry.brand||'',F:entry.category||'',G:entry.name,I:entry.nature||'',J:entry.mechanism||'',N:'\\',R:'\\',S:'',W:'\\',X:'\\',Y:'\\',Z:'\\',AA:'\\',AB:'\\',
