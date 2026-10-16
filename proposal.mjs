@@ -10,7 +10,7 @@ export const proposalColumns=[
 export const proposalImageColumns=new Set(['H','U','X','Y','AC']);
 export function proposalValues(entry,overrides={}){
  const ylj=entry.sheetTitle==='悦龄集',xy=entry.sheetTitle?.startsWith('星跃');
- const values={A:'混场',B:'',C:'全国',D:ylj?'四川万鑫未来科技有限公司':xy?'四川风驰星跃电子商务有限公司':entry.supplier||'',E:ylj?'悦龄集':entry.brand||'',F:entry.category||'',G:entry.name,I:entry.nature||'',J:entry.mechanism||'',N:'\\',R:'\\',S:'',W:'\\',X:'\\',Y:'\\',Z:'\\',AA:'\\',AB:'\\',
+ const values={A:'混场',B:entry.shippingCity||'',C:'全国',D:ylj?'四川万鑫未来科技有限公司':xy?'四川风驰星跃电子商务有限公司':entry.supplier||'',E:ylj?'悦龄集':entry.brand||'',F:entry.category||'',G:entry.name,I:entry.nature||'',J:entry.mechanism||'',N:'\\',R:'\\',S:'',W:'\\',X:'\\',Y:'\\',Z:'\\',AA:'\\',AB:'\\',
  P:'比如偏远地区一个收货地址xx斤以下，加收xx费用',Q:'1≥单量',
  AD:'30天',AE:'门店-云仓-工厂（注意云仓只能中转点货，不具备任何保管货物完整和冷藏冷冻功能）',AF:'以产品笔记为准'};
  for(const [col,field] of [['K','livePrice'],['L','barePrice'],['M','deliveredPrice']])values[col]=typeof entry[field]==='number'?entry[field]:'';

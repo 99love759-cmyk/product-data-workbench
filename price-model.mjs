@@ -2,7 +2,7 @@ const text=value=>String(value??'').trim();
 const key=value=>text(value).normalize('NFKC').replace(/\s/g,'').replace(/[（）]/g,c=>c==='（'?'(':')');
 const definitions=[
  ['name',['品牌+产品名称','产品名称']],['supplier',['厂家公司名称','厂家公司名称签合同的公司名称']],
- ['brand',['品牌']],['category',['品类']],['nature',['产品性质']],['mechanism',['直播机制','直播机制(规格+数量)']],
+ ['brand',['品牌']],['shippingCity',['发货城市','发货地址','发货地']],['category',['品类']],['nature',['产品性质']],['mechanism',['直播机制','直播机制(规格+数量)']],
  ['livePrice',['直播价']],['barePrice',['裸价']],['deliveredPrice',['含运价']],['margin',['平台毛利']],
  ['sold',['是否卖过']],['settlementUnit',['结算(最小单位)']],['quantity',['机制数量']],
  ['settlementOrder',['每单结算','每单结算(含运)']],['profitBeforeFreight',['每单利润(未扣减运费)']],
