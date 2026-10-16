@@ -6,12 +6,12 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'">
   <meta name="data-mode" content="cloud"><meta name="robots" content="noindex,nofollow">
   <title>产品数据工作台</title>
-  <link rel="icon" href="./favicon.svg?v=11"><link rel="stylesheet" href="./styles.css?v=11"><link rel="stylesheet" href="./theme.css?v=11">
-  <script type="module" src="./app.js?v=11"></script>
+  <link rel="icon" href="./favicon.svg?v=12"><link rel="stylesheet" href="./styles.css?v=12"><link rel="stylesheet" href="./theme.css?v=12">
+  <script type="module" src="./app.js?v=12"></script>
 </head>
 <body>
   <aside class="sidebar">
-    <a class="brand" href="#overview"><img src="./favicon.svg?v=11" width="39" height="39" alt=""><span>产品数据工作台<small>PRODUCT INTELLIGENCE</small></span></a>
+    <a class="brand" href="#overview"><img src="./favicon.svg?v=12" width="39" height="39" alt=""><span>产品数据工作台<small>PRODUCT INTELLIGENCE</small></span></a>
     <div class="nav-caption">工作空间</div>
     <nav aria-label="主导航">
       <button data-page="overview" class="nav-item active"><span data-icon="grid"></span>数据概览</button>
@@ -33,7 +33,7 @@
         <label><span>数据范围</span><select id="filter-group"><option value="">全部业务</option></select></label>
         <label><span>直播间</span><select id="filter-room"><option value="">全部直播间</option></select></label>
         <label><span>主播</span><select id="filter-anchor"><option value="">全部主播</option></select></label>
-        <div class="date-filter"><label><span>直播日期</span><div class="date-inputs"><input id="filter-from" type="date" aria-label="开始日期"><span>至</span><input id="filter-to" type="date" aria-label="结束日期"></div></label></div>
+        <div class="date-filter" role="group" aria-label="直播日期"><span class="date-filter-label">直播日期</span><div class="date-inputs"><label class="date-input-wrap"><span>开始日期</span><input id="filter-from" type="date" aria-label="开始日期"></label><span class="date-separator" aria-hidden="true">至</span><label class="date-input-wrap"><span>结束日期</span><input id="filter-to" type="date" aria-label="结束日期"></label></div></div>
         <button class="button quiet" id="reset-filters">重置</button>
       </section>
       <div id="range-tools" class="range-tools"><span id="range-label">全部历史</span><div><button data-range="all" class="active">全部历史</button><button data-range="latest">最近售卖日</button><button data-range="7">近 7 天</button><button data-range="30">近 30 天</button></div></div>
