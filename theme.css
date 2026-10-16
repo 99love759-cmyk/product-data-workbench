@@ -205,7 +205,19 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
 [data-theme] td{color:var(--text);border-color:var(--line);font-size:12px;padding-block:20px}
 [data-theme] th:first-child,[data-theme] td:first-child{padding-left:28px}
 [data-theme] th:last-child,[data-theme] td:last-child{padding-right:28px}
-[data-theme] .product-cell{gap:0;min-width:210px;max-width:340px}
+[data-theme] .product-cell{gap:12px;min-width:210px;max-width:340px}
+[data-theme] .product-copy{min-width:0}
+[data-theme] .sales-product-photo{display:block;flex:none;width:48px;height:48px;object-fit:contain;background:#fff;border:1px solid var(--line);border-radius:10px}
+[data-theme] .insight-product{display:flex;align-items:center;gap:12px;width:100%;min-width:0}
+[data-theme] .insight-product>span{display:block;min-width:0}
+[data-theme] .insight-product .sales-product-photo{width:40px;height:40px}
+[data-theme] .insight-product strong{white-space:normal}
+[data-theme] .board-product-cell{display:inline-flex;align-items:center;gap:8px}
+[data-theme] .board-product-cell .board-rank{width:auto;flex:none}
+[data-theme] .board-product-cell .sales-product-photo{width:36px;height:36px;border-radius:8px}
+[data-theme] .dialog-product-heading{display:flex;align-items:center;gap:16px;min-width:0}
+[data-theme] .dialog-product-heading .sales-product-photo{width:64px;height:64px}
+[data-theme] .stock-product-picker .sales-product-photo{width:32px;height:32px;border-radius:7px}
 [data-theme] .product-cell strong{color:var(--text);font-size:13px;font-weight:550;line-height:1.7}
 [data-theme] .product-cell small{color:var(--muted);font-size:11px;line-height:1.7;margin-top:5px}
 [data-theme] .product-cell .chip{vertical-align:1px;font-weight:400}
@@ -432,6 +444,9 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
  [data-theme] .table-toolbar .button{font-size:11px;padding:8px 12px}
  [data-theme] .table-footer{padding:18px 22px;font-size:10px;gap:10px;align-items:start}
  [data-theme] .product-cell{min-width:200px;max-width:270px}
+ [data-theme] .product-cell .sales-product-photo{width:44px;height:44px}
+ [data-theme] .dialog-product-heading{gap:12px}
+ [data-theme] .dialog-product-heading .sales-product-photo{width:48px;height:48px}
  [data-theme] .product-cell strong{font-size:13px}
  [data-theme] .product-cell small{font-size:10px}
  [data-theme] th:first-child,[data-theme] td:first-child{padding-left:22px}
