@@ -1,0 +1,65 @@
+// The public site fills a prepared copy of the supplied template in the browser.
+// No upload or local server is needed to download an Excel workbook.
+export const proposalColumns=[
+ ['A','场次属性'],['B','发货城市'],['C','可直播城市（精确到区）'],['D','签合同的厂家公司名称'],['E','品牌'],['F','品类'],
+ ['G','品牌 + 产品名称'],['H','产品图片'],['I','产品性质'],['J','直播机制（规格 + 数量）'],['K','直播价'],['L','裸价（不含运不含税）'],
+ ['M','含运价（含运不含税）'],['N','一键代发价格'],['O','毛利率（自动计算）'],['P','偏远运费加收与物流'],['Q','按含运价结算的单量条件'],
+ ['R','产品 69 码'],['S','现货库存'],['T','发货是否混发'],['U','产品手卡'],['V','背书与卖点'],['W','助播'],['X','助播身份证人像面'],
+ ['Y','助播身份证国徽面'],['Z','商务对接人'],['AA','商家对接人'],['AB','商家电话'],['AC','付款比例'],['AD','售后期'],['AE','退货方案'],['AF','有效期与保质期']
+];
+export const proposalImageColumns=new Set(['H','U','X','Y']);
+export function proposalValues(entry,overrides={}){
+ const values={A:'混场',B:'',C:'全国',D:entry.supplier||'',E:entry.brand||'',F:entry.category||'',G:entry.name,I:entry.nature||'',J:entry.mechanism||'',N:'\\',R:'\\',S:'',W:'\\',X:'\\',Y:'\\',Z:'\\',AA:'\\',AB:'\\'};
+ for(const [col,field] of [['K','livePrice'],['L','barePrice'],['M','deliveredPrice']])values[col]=typeof entry[field]==='number'?entry[field]:'';
+ // Settlement per smallest unit and per order are not a dropshipping quotation.
+ return {...values,...overrides};
+}
+const xml=value=>String(value??'').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+function dataRow(entry,index,styles,overrides){
+ const values=proposalValues(entry,overrides),row=index+3;
+ return `<row r="${row}" ht="78" customHeight="1">${proposalColumns.map(([col])=>{
+  const style=styles[col]===undefined?'':` s="${styles[col]}"`,ref=`${col}${row}`;
+  if(col==='O'){
+   const k=values.K,m=values.M,margin=typeof k==='number'&&typeof m==='number'&&k!==0?(k-m)/k:null;
+   return `<c r="${ref}"${style}${margin===null?' t="str"':''}><f>IF(OR(K${row}="",M${row}="",K${row}=0),"",(K${row}-M${row})/K${row})</f><v>${margin===null?'':margin}</v></c>`;
+  }
+  const value=values[col];
+  if(typeof value==='number'&&Number.isFinite(value))return `<c r="${ref}"${style}><v>${value}</v></c>`;
+  if(value===undefined||value===null||value==='')return `<c r="${ref}"${style}/>`;
+  return `<c r="${ref}"${style} t="inlineStr"><is><t xml:space="preserve">${xml(value)}</t></is></c>`;
+ }).join('')}</row>`;
+}
+const encoder=new TextEncoder();
+const crcTable=Uint32Array.from({length:256},(_,n)=>{for(let i=0;i<8;i++)n=n&1?0xedb88320^(n>>>1):n>>>1;return n>>>0;});
+function crc32(bytes){let crc=0xffffffff;for(const b of bytes)crc=crcTable[(crc^b)&255]^(crc>>>8);return (crc^0xffffffff)>>>0;}
+function block(size){const bytes=new Uint8Array(size);return {bytes,view:new DataView(bytes.buffer)};}
+// Stored ZIP entries keep this small exporter independent of third-party CDNs.
+export function zipFiles(files){
+ const chunks=[],central=[];let offset=0;
+ for(const file of files){
+  const name=encoder.encode(file.path),data=typeof file.content==='string'?encoder.encode(file.content):file.content,crc=crc32(data);
+  const local=block(30+name.length);local.view.setUint32(0,0x04034b50,true);local.view.setUint16(4,20,true);local.view.setUint16(6,0x800,true);local.view.setUint16(12,0x21,true);local.view.setUint32(14,crc,true);local.view.setUint32(18,data.length,true);local.view.setUint32(22,data.length,true);local.view.setUint16(26,name.length,true);local.bytes.set(name,30);
+  chunks.push(local.bytes,data);
+  const dir=block(46+name.length);dir.view.setUint32(0,0x02014b50,true);dir.view.setUint16(4,20,true);dir.view.setUint16(6,20,true);dir.view.setUint16(8,0x800,true);dir.view.setUint16(14,0x21,true);dir.view.setUint32(16,crc,true);dir.view.setUint32(20,data.length,true);dir.view.setUint32(24,data.length,true);dir.view.setUint16(28,name.length,true);dir.view.setUint32(42,offset,true);dir.bytes.set(name,46);central.push(dir.bytes);offset+=local.bytes.length+data.length;
+ }
+ const centralSize=central.reduce((n,b)=>n+b.length,0),end=block(22);end.view.setUint32(0,0x06054b50,true);end.view.setUint16(8,files.length,true);end.view.setUint16(10,files.length,true);end.view.setUint32(12,centralSize,true);end.view.setUint32(16,offset,true);
+ const bytes=new Uint8Array(offset+centralSize+22);let at=0;for(const chunk of [...chunks,...central,end.bytes]){bytes.set(chunk,at);at+=chunk.length;}return bytes;
+}
+export function createProposalWorkbook(entries,template,overrides={}){
+ if(!entries.length)throw Error('请先勾选需要提报的产品规格。');
+ if(!Array.isArray(template?.parts)||!template.sheetPath||!template.rowStyles)throw Error('提报模板未完整加载，请重试。');
+ const rows=entries.map((entry,i)=>dataRow(entry,i,template.rowStyles,overrides[entry.id])).join(''),last=entries.length+2;
+ return zipFiles(template.parts.map(part=>{
+  let content=part.text;
+  if(part.path===template.sheetPath){
+   const header=(content.match(/<sheetData[^>]*>([\s\S]*?)<\/sheetData>/)||[])[1]?.match(/<row\b[^>]*\br="[12]"[^>]*>[\s\S]*?<\/row>/g)?.join('');
+   if(!header)throw Error('提报模板表头不完整，请重试。');
+   content=content.replace(/<sheetData[^>]*>[\s\S]*?<\/sheetData>/,`<sheetData>${header}${rows}</sheetData>`)
+    .replace(/<dimension ref="[^"]+"\s*\/>/,`<dimension ref="A1:AF${last}"/>`)
+    .replace(/(<autoFilter\b[^>]*ref=")[^"]+("[^>]*>)/,`$1A2:AF${last}$2`)
+    .replace(/sqref="([A-Z]+)3:([A-Z]+)10"/g,(_,a,b)=>`sqref="${a}3:${b}${last}"`);
+  }
+  if(part.path==='xl/workbook.xml')content=content.replace(/('?(?:提报表)'?!\$A\$2:\$[A-Z]+\$)10/g,`$1${last}`);
+  return {path:part.path,content:content??Uint8Array.from(atob(part.base64),c=>c.charCodeAt(0))};
+ }));
+}

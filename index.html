@@ -6,18 +6,19 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'">
   <meta name="data-mode" content="cloud"><meta name="robots" content="noindex,nofollow">
   <title>产品数据工作台</title>
-  <link rel="icon" href="./favicon.svg?v=9"><link rel="stylesheet" href="./styles.css?v=9"><link rel="stylesheet" href="./theme.css?v=9">
-  <script type="module" src="./app.js?v=9"></script>
+  <link rel="icon" href="./favicon.svg?v=10"><link rel="stylesheet" href="./styles.css?v=10"><link rel="stylesheet" href="./theme.css?v=10">
+  <script type="module" src="./app.js?v=10"></script>
 </head>
 <body>
   <aside class="sidebar">
-    <a class="brand" href="#overview"><img src="./favicon.svg?v=9" width="39" height="39" alt=""><span>产品数据工作台<small>PRODUCT INTELLIGENCE</small></span></a>
+    <a class="brand" href="#overview"><img src="./favicon.svg?v=10" width="39" height="39" alt=""><span>产品数据工作台<small>PRODUCT INTELLIGENCE</small></span></a>
     <div class="nav-caption">工作空间</div>
     <nav aria-label="主导航">
       <button data-page="overview" class="nav-item active"><span data-icon="grid"></span>数据概览</button>
       <button data-page="rooms" class="nav-item"><span data-icon="layers"></span>直播间看板</button>
       <button data-page="products" class="nav-item"><span data-icon="box"></span>产品表现</button>
       <button data-page="stock" class="nav-item"><span data-icon="calculator"></span>备货计算<span class="nav-dot"></span></button>
+      <button data-page="prices" class="nav-item"><span data-icon="money"></span>价格查询</button>
       <button data-page="quality" class="nav-item"><span data-icon="database"></span>数据与口径</button>
     </nav>
     <button id="theme-toggle" class="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="白底模式"><span class="theme-switch"><i></i></span><span>白底模式</span></button>
@@ -40,12 +41,14 @@
       <section id="rooms-view" class="page-view" hidden></section>
       <section id="products-view" class="page-view" hidden></section>
       <section id="stock-view" class="page-view" hidden></section>
+      <section id="prices-view" class="page-view" hidden></section>
       <section id="quality-view" class="page-view" hidden></section>
       <footer>产品数据工作台 <span>组合按一单统计，备货按组件拆分</span></footer>
     </main>
   </div>
   <dialog id="product-dialog"><div id="dialog-content"></div></dialog>
   <dialog id="tool-dialog"><div id="tool-content"></div></dialog>
+  <dialog id="price-dialog"></dialog>
   <div id="toast" role="status"></div>
 </body>
 </html>
