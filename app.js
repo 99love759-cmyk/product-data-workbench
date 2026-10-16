@@ -1,6 +1,6 @@
-import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=12';
-import {cloud,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=12';
-import {createPriceModule} from './prices.mjs?v=12';
+import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=13';
+import {cloud,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=13';
+import {createPriceModule} from './prices.mjs?v=13';
 const $=id=>document.getElementById(id);
 function applyTheme(theme){const light=theme==='light';document.documentElement.dataset.theme=light?'light':'dark';$('theme-toggle').setAttribute('aria-checked',String(light));document.querySelector('meta[name="theme-color"]').content=light?'#f5f5f7':'#101011';try{localStorage.setItem('product-workbench-theme',light?'light':'dark');}catch{}}
 try{applyTheme(localStorage.getItem('product-workbench-theme')||'light');}catch{applyTheme('light');}
@@ -82,10 +82,87 @@ function showProduct(key){const boardKey=state.page==='rooms'?showProduct.roomGr
 function stockInput(){const s=state.stock;return {...s,audience:s.audience===''?null:Number(s.audience),customRate:s.customRate===''?null:Number(s.customRate)/100};}
 function savePlan(){try{localStorage.setItem('yue-stock-plan-v2',JSON.stringify(state.stock));}catch{}}
 function stockOptions(){const s=state.stock;return [...new Map(state.data.records.filter(r=>r.productKey===s.productKey).map(r=>[r.mechanismKey,r])).values()];}
-function renderStock(){const s=state.stock,options=stockOptions();let result=predict(state.data,stockInput());if(result.mechanismKey&&!s.mechanismKey)s.mechanismKey=result.mechanismKey;
+let disposeStockPicker=()=>{},restoringStockPickerFocus=false;
+function setupStockPicker(choices){
+ const root=$('stock-product-picker'),input=$('stock-product'),toggle=$('stock-product-toggle'),menu=$('stock-product-menu'),list=$('stock-product-list'),status=$('stock-product-count');
+ const controller=new AbortController(),signal=controller.signal;
+ const selected=choices.find(p=>p.key===state.stock.productKey),selectedName=selected?.name||'';
+ let matches=[],active=-1,composing=false;
+ const on=(target,type,listener,options={})=>target.addEventListener(type,listener,{...options,signal});
+ function position(){
+  if(menu.hidden)return;
+  const rect=root.getBoundingClientRect(),viewport=window.visualViewport,viewportTop=viewport?.offsetTop||0;
+  const top=Math.max(viewportTop,document.querySelector('.sidebar').getBoundingClientRect().bottom),bottom=viewportTop+(viewport?.height||innerHeight);
+  const below=bottom-rect.bottom-12,above=rect.top-top-12,up=below<160&&above>below;
+  root.dataset.side=up?'above':'below';
+  menu.style.maxHeight=`${Math.max(80,Math.min(300,up?above:below))}px`;
+ }
+ function highlight(index,scroll=false){
+  active=index;
+  for(const [i,option] of [...list.children].entries())option.classList.toggle('is-active',i===active);
+  const option=list.children[active];
+  if(option){input.setAttribute('aria-activedescendant',option.id);if(scroll)option.scrollIntoView({block:'nearest'});}
+  else input.removeAttribute('aria-activedescendant');
+ }
+ function close(restore=true){
+  menu.hidden=true;input.setAttribute('aria-expanded','false');toggle.setAttribute('aria-expanded','false');highlight(-1);
+  if(restore)input.value=selectedName;
+ }
+ function open(query=''){
+  if(input.disabled)return;
+  const words=query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+  matches=choices.filter(p=>words.every(word=>`${p.name} ${p.group}`.toLocaleLowerCase().includes(word)));
+  status.textContent=words.length?`找到 ${matches.length} 款产品`:`共 ${matches.length} 款产品 · 输入关键词搜索`;
+  list.innerHTML=matches.map((p,i)=>`<li id="stock-product-option-${i}" role="option" aria-selected="${p.key===state.stock.productKey}" data-choice="${i}"><span class="stock-product-name">${esc(p.name)}</span>${p.bundle?'<span class="chip bundle">组合品</span>':''}${p.key===state.stock.productKey?icon('check'):''}</li>`).join('');
+  $('stock-product-empty').hidden=matches.length>0;
+  menu.hidden=false;input.setAttribute('aria-expanded','true');toggle.setAttribute('aria-expanded','true');highlight(-1);menu.scrollTop=0;position();
+ }
+ function choose(product){
+  if(!product)return;
+  close();
+  if(product.key===state.stock.productKey){input.value=product.name;return;}
+  // Only a confirmed choice changes the plan; typing never changes its history.
+  const keyboard=document.activeElement===input;
+  planFor(product.key);
+  if(keyboard){restoringStockPickerFocus=true;$('stock-product').focus({preventScroll:true});restoringStockPickerFocus=false;}
+ }
+ on(input,'focus',()=>{if(!restoringStockPickerFocus){open();input.select();}});
+ on(input,'click',()=>{if(menu.hidden)open();});
+ on(input,'input',event=>{if(!composing&&!event.isComposing)open(input.value);});
+ on(input,'compositionstart',()=>{composing=true;});
+ on(input,'compositionend',()=>{composing=false;open(input.value);});
+ on(input,'change',()=>{
+  if(composing)return;
+  const exact=choices.filter(p=>p.name===input.value.trim());
+  if(exact.length===1)choose(exact[0]);
+ });
+ on(input,'keydown',event=>{
+  if(composing||event.isComposing||event.keyCode===229)return;
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+   event.preventDefault();if(menu.hidden)open();
+   if(matches.length)highlight((active+(event.key==='ArrowDown'?1:active<0?0:-1)+matches.length)%matches.length,true);
+  }else if(event.key==='Enter'&&!menu.hidden){
+   event.preventDefault();const exact=matches.filter(p=>p.name===input.value.trim());
+   choose(matches[active]||(exact.length===1?exact[0]:matches.length===1?matches[0]:null));
+  }else if(event.key==='Escape'){event.preventDefault();close();}
+ });
+ on(toggle,'pointerdown',event=>event.preventDefault());
+ on(toggle,'click',()=>{if(menu.hidden)open();else close();});
+ // Keep input focus while tapping an option, so blur cannot replace the list
+ // before the click. Native touch scrolling remains available in the menu.
+ on(list,'pointerdown',event=>{if(event.target.closest('[data-choice]'))event.preventDefault();});
+ on(list,'click',event=>{const option=event.target.closest('[data-choice]');if(option)choose(matches[Number(option.dataset.choice)]);});
+ on(list,'pointermove',event=>{if(event.pointerType==='mouse'){const option=event.target.closest('[data-choice]');if(option)highlight(Number(option.dataset.choice));}});
+ on(root,'focusout',event=>{if(!root.contains(event.relatedTarget))close();});
+ on(document,'pointerdown',event=>{if(!root.contains(event.target))close();});
+ on(window,'resize',position);on(window,'scroll',position,{passive:true});
+ if(window.visualViewport){on(window.visualViewport,'resize',position);on(window.visualViewport,'scroll',position);}
+ return ()=>controller.abort();
+}
+function renderStock(){disposeStockPicker();const s=state.stock,options=stockOptions();let result=predict(state.data,stockInput());if(result.mechanismKey&&!s.mechanismKey)s.mechanismKey=result.mechanismKey;
  const selected=state.data.products.find(p=>p.key===s.productKey);if(selected)s.business=selected.group;const choices=state.data.products.filter(p=>!s.business||p.group===s.business);
- $('stock-view').innerHTML=`<div class="stock-grid"><article class="panel form-panel"><h2>本次备货设置</h2><p class="form-intro">先选业务和产品，再综合该产品全部有效历史备货</p><label class="field"><span>所属业务</span><select id="stock-business">${businesses().map(b=>`<option value="${esc(b.name)}" ${s.business===b.name?'selected':''}>${esc(b.name)} · ${b.products} 款产品</option>`).join('')}</select><small>选择产品所在业务；预测仍覆盖该产品全部直播间的历史。</small></label>${!choices.length?`<div class="empty-business-note">${esc(s.business)} 的明细表已接入，暂无售卖产品。原表填入后刷新即可计算。</div>`:''}<div class="stock-fields"><label class="field"><span>产品 / 组合品</span><input type="search" list="stock-product-list" id="stock-product" value="${esc(selected?.name||'')}" placeholder="${choices.length?'输入或选择产品名称':'该业务暂无产品'}" ${!choices.length?'disabled':''} autocomplete="off"><datalist id="stock-product-list">${choices.map(p=>`<option value="${esc(p.name)}">${esc(p.group)}${p.bundle?' · 组合品':''}</option>`).join('')}</datalist><small>组合品按整单预测，再分别计算组件。</small></label><label class="field"><span>本次售卖规格</span><select id="stock-mechanism">${options.map(r=>`<option value="${esc(r.mechanismKey)}" ${s.mechanismKey===r.mechanismKey?'selected':''}>${esc(r.mechanism)}</option>`).join('')}</select><small>用于确定本次每单发货数量；历史计算覆盖该产品的全部规格。</small></label></div><div class="history-scope"><div class="scope-title">${icon('database')} 全部历史参与计算</div><p>${result.recordCount||0} 条有效记录，覆盖 ${result.roomCount||0} 个直播间、${result.anchorCount||0} 位主播。</p><small>${result.dateRange?.from?`${esc(result.dateRange.from)} 至 ${esc(result.dateRange.to)}`:'等待完整历史数据'}</small></div><div id="stock-bundle-note">${selected?.bundle?`<div class="bundle-info"><strong>${icon('layers')} 组合明细</strong>${esc(result.mechanism||'')}</div>`:''}</div><div class="form-divider"></div><div class="two-fields"><label class="field"><span>预计峰值在线人数</span><div class="input-suffix"><input type="number" min="1" step="1" id="stock-audience" value="${esc(s.audience)}" placeholder="${result.suggestedAudience?Math.round(result.suggestedAudience):'请输入'}"><span>人</span></div><small id="audience-hint">${result.suggestedAudience?`留空使用历史场次中位数 ${fmt(result.suggestedAudience)} 人`:'暂无历史人数，请手动填写。'}</small></label><label class="field"><span>安全余量</span><div class="input-suffix"><input type="number" min="0" max="200" step="1" id="stock-buffer" value="${esc(s.buffer)}"><span>%</span></div><small>默认 10%，可根据备货习惯调整。</small></label></div><label class="field"><details ${s.customRate!==''||!result.baseline?.sufficient?'open':''}><summary>${result.baseline?.sufficient?'手动指定转化率（可选）':'样本不足，请手动确认转化率'}</summary><div class="input-suffix"><input type="number" min="0" step="0.01" id="stock-custom-rate" value="${esc(s.customRate)}" placeholder="满 3 场后可使用稳健平均"><span>%</span></div><small>不足 3 场不会自动生成备货量。请核实后输入；手动值会覆盖历史均值，并标明“手动假设”。</small></details></label><div class="formula">预计订单 = 峰值在线人数 × 历史稳健平均转化率<br>手动指定时，采用已确认的手动转化率<br>组件备货 = 向上取整（预计订单 × 每单数量 × 安全系数）<br>需补备货 = 组件备货 − 可用库存，最低为 0</div><button id="stock-reset" class="button quiet small">重置本次输入</button></article><div id="stock-right" class="stock-right"></div></div><p class="section-note">备货基于历史售卖表现；主播、价格和流量结构变化会影响实际结果。全部有效历史先参与评估，再去掉两端极值计算场均转化率；手动输入时采用手动值。输入本次预计在线人数，按本次每单数量拆分备货。 每单数量和可用库存可在组件表中直接修改。</p>`;
- renderStockResult(result);savePlan();
+ $('stock-view').innerHTML=`<div class="stock-grid"><article class="panel form-panel"><h2>本次备货设置</h2><p class="form-intro">先选业务和产品，再综合该产品全部有效历史备货</p><label class="field"><span>所属业务</span><select id="stock-business">${businesses().map(b=>`<option value="${esc(b.name)}" ${s.business===b.name?'selected':''}>${esc(b.name)} · ${b.products} 款产品</option>`).join('')}</select><small>选择产品所在业务；预测仍覆盖该产品全部直播间的历史。</small></label>${!choices.length?`<div class="empty-business-note">${esc(s.business)} 的明细表已接入，暂无售卖产品。原表填入后刷新即可计算。</div>`:''}<div class="stock-fields"><div class="field stock-product-field"><label for="stock-product">产品 / 组合品</label><div id="stock-product-picker" class="stock-product-picker"><input type="text" id="stock-product" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="stock-product-list" aria-describedby="stock-product-help" value="${esc(selected?.name||'')}" placeholder="${choices.length?'输入关键词或下拉选择':'该业务暂无产品'}" ${!choices.length?'disabled':''} autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"><button type="button" id="stock-product-toggle" class="stock-product-toggle" aria-label="展开产品列表" aria-controls="stock-product-list" aria-expanded="false" tabindex="-1" ${!choices.length?'disabled':''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg></button><div id="stock-product-menu" class="stock-product-menu" hidden><div id="stock-product-count" class="stock-product-count" role="status" aria-live="polite"></div><ul id="stock-product-list" role="listbox" aria-label="选择产品或组合品"></ul><div id="stock-product-empty" class="stock-product-empty" hidden>未找到匹配产品，请换个关键词。</div></div></div><small id="stock-product-help">可下拉选择或输入搜索；组合品按整单预测，再分别计算组件。</small></div><label class="field"><span>本次售卖规格</span><select id="stock-mechanism">${options.map(r=>`<option value="${esc(r.mechanismKey)}" ${s.mechanismKey===r.mechanismKey?'selected':''}>${esc(r.mechanism)}</option>`).join('')}</select><small>用于确定本次每单发货数量；历史计算覆盖该产品的全部规格。</small></label></div><div class="history-scope"><div class="scope-title">${icon('database')} 全部历史参与计算</div><p>${result.recordCount||0} 条有效记录，覆盖 ${result.roomCount||0} 个直播间、${result.anchorCount||0} 位主播。</p><small>${result.dateRange?.from?`${esc(result.dateRange.from)} 至 ${esc(result.dateRange.to)}`:'等待完整历史数据'}</small></div><div id="stock-bundle-note">${selected?.bundle?`<div class="bundle-info"><strong>${icon('layers')} 组合明细</strong>${esc(result.mechanism||'')}</div>`:''}</div><div class="form-divider"></div><div class="two-fields"><label class="field"><span>预计峰值在线人数</span><div class="input-suffix"><input type="number" min="1" step="1" id="stock-audience" value="${esc(s.audience)}" placeholder="${result.suggestedAudience?Math.round(result.suggestedAudience):'请输入'}"><span>人</span></div><small id="audience-hint">${result.suggestedAudience?`留空使用历史场次中位数 ${fmt(result.suggestedAudience)} 人`:'暂无历史人数，请手动填写。'}</small></label><label class="field"><span>安全余量</span><div class="input-suffix"><input type="number" min="0" max="200" step="1" id="stock-buffer" value="${esc(s.buffer)}"><span>%</span></div><small>默认 10%，可根据备货习惯调整。</small></label></div><label class="field"><details ${s.customRate!==''||!result.baseline?.sufficient?'open':''}><summary>${result.baseline?.sufficient?'手动指定转化率（可选）':'样本不足，请手动确认转化率'}</summary><div class="input-suffix"><input type="number" min="0" step="0.01" id="stock-custom-rate" value="${esc(s.customRate)}" placeholder="满 3 场后可使用稳健平均"><span>%</span></div><small>不足 3 场不会自动生成备货量。请核实后输入；手动值会覆盖历史均值，并标明“手动假设”。</small></details></label><div class="formula">预计订单 = 峰值在线人数 × 历史稳健平均转化率<br>手动指定时，采用已确认的手动转化率<br>组件备货 = 向上取整（预计订单 × 每单数量 × 安全系数）<br>需补备货 = 组件备货 − 可用库存，最低为 0</div><button id="stock-reset" class="button quiet small">重置本次输入</button></article><div id="stock-right" class="stock-right"></div></div><p class="section-note">备货基于历史售卖表现；主播、价格和流量结构变化会影响实际结果。全部有效历史先参与评估，再去掉两端极值计算场均转化率；手动输入时采用手动值。输入本次预计在线人数，按本次每单数量拆分备货。 每单数量和可用库存可在组件表中直接修改。</p>`;
+ disposeStockPicker=setupStockPicker(choices);renderStockResult(result);savePlan();
 }
 function baselineRoleLabel(role){return {'included':'计入均值','trimmed-low':'低位去尾','trimmed-high':'高位去尾','insufficient':'仅供参考'}[role]||'仅供参考';}
 function stockBaselineInfo(result){const b=result.baseline;if(!b)return '';
@@ -140,7 +217,7 @@ function syncStatus(status){state.status=status;$('refresh').disabled=status.run
 async function poll(){try{const status=await requestStatus();syncStatus(status);if(status.running){pollTimer=setTimeout(poll,1400);}else{const payload=await requestData();setData(payload.data);syncStatus(payload.status);if(!status.error)toast(status.publicationEnabled?'原表已刷新，云端分享已更新':'已获取最新的产品数据');else if(!state.data)render();}}catch(error){syncStatus({...state.status,running:false,error:error.message});}}
 async function startRefresh(){clearTimeout(pollTimer);syncStatus({running:true,step:0,total:1,message:cloud?'正在同步云端数据…':'正在连接企业微信…',error:null});try{const payload=await requestRefresh();if(cloud){setData(payload.data);syncStatus(payload.status);toast('已载入云端最新发布数据');}else{syncStatus(payload);pollTimer=setTimeout(poll,1000);}}catch(error){syncStatus({running:false,error:error.message});render();}}
 document.addEventListener('click',event=>{const t=event.target.closest('button,[data-product]');if(!t)return;if(t.id==='theme-toggle'){applyTheme(document.documentElement.dataset.theme==='light'?'dark':'light');return;}if(t.dataset.business!==undefined){state.filters.group=t.dataset.business;state.tablePage=1;populateFilters();render();return;}if(t.dataset.page){navigate(t.dataset.page);return;}if(t.dataset.go){navigate(t.dataset.go);return;}if(t.dataset.plan){planFor(t.dataset.plan);return;}if(t.dataset.product){showProduct.roomGroup=t.dataset.roomGroup||null;showProduct(t.dataset.product);return;}if(t.dataset.boardTab){state.boardTabs[t.dataset.boardGroup]=t.dataset.boardTab;renderRooms();return;}if(t.dataset.historyDate){setDateRange(t.dataset.historyDate,t.dataset.historyDate);$('tool-dialog').close();navigate('rooms');return;}if(t.dataset.range){applyDateRange(t.dataset.range);return;}if(t.id==='show-history'){showHistory();return;}if(t.id==='show-report'){showReport();return;}if(t.id==='close-tool')$('tool-dialog').close();if(t.id==='copy-report')copyReport();if(t.id==='download-report')downloadReport();if(t.dataset.rate){state.rateMode=t.dataset.rate;render();return;}if(t.id==='refresh')startRefresh();if(t.id==='reset-filters'){state.filters={group:'',room:'',anchor:'',from:'',to:''};['group','room','anchor','from','to'].forEach(k=>$(`filter-${k}`).value='');populateFilters();state.tablePage=1;render();}if(t.id==='prev-page'){state.tablePage--;render();}if(t.id==='next-page'){state.tablePage++;render();}if(t.id==='export-products')exportProducts();if(t.id==='export-stock')exportStock();if(t.id==='close-dialog'||t.id==='close-dialog-bottom')$('product-dialog').close();if(t.id==='stock-reset'){Object.assign(state.stock,{audience:'',buffer:10,customRate:'',stock:{},quantities:{}});renderStock();}});
-document.addEventListener('change',event=>{const t=event.target;if(t.id?.startsWith('filter-')){state.filters[t.id.slice(7)]=t.value;if(t.id==='filter-group')populateFilters();state.tablePage=1;render();}if(t.id==='board-sort'){state.boardSort=t.value;renderRooms();}if(t.id==='product-sort'){state.sort=t.value;render();}if(t.id==='stock-business'){state.stock.business=t.value;const product=productGroups(state.data.records.filter(r=>r.group===t.value)).sort((a,b)=>b.orders-a.orders)[0];planFor(product?.key||'');}if(t.id==='stock-product'){const found=state.data.products.find(p=>p.name===t.value&&(!state.stock.business||p.group===state.stock.business));if(found)planFor(found.key);else toast('请从下拉列表中选择一个已有产品');}const fields={'stock-mechanism':'mechanismKey'};if(fields[t.id]){state.stock[fields[t.id]]=t.value;state.stock.audience='';state.stock.customRate='';if(t.id==='stock-mechanism'){state.stock.quantities={};state.stock.stock={};}renderStock();}if(t.dataset.quantity!==undefined||t.dataset.stock!==undefined){const components=state.data.records.find(r=>r.productKey===state.stock.productKey&&r.mechanismKey===state.stock.mechanismKey)?.components||[];const index=Number(t.dataset.quantity??t.dataset.stock),name=components[index]?.name;if(name){state.stock[t.dataset.quantity!==undefined?'quantities':'stock'][name]=t.value;renderStockResult();}}});
+document.addEventListener('change',event=>{const t=event.target;if(t.id?.startsWith('filter-')){state.filters[t.id.slice(7)]=t.value;if(t.id==='filter-group')populateFilters();state.tablePage=1;render();}if(t.id==='board-sort'){state.boardSort=t.value;renderRooms();}if(t.id==='product-sort'){state.sort=t.value;render();}if(t.id==='stock-business'){state.stock.business=t.value;const product=productGroups(state.data.records.filter(r=>r.group===t.value)).sort((a,b)=>b.orders-a.orders)[0];planFor(product?.key||'');}const fields={'stock-mechanism':'mechanismKey'};if(fields[t.id]){state.stock[fields[t.id]]=t.value;state.stock.audience='';state.stock.customRate='';if(t.id==='stock-mechanism'){state.stock.quantities={};state.stock.stock={};}renderStock();}if(t.dataset.quantity!==undefined||t.dataset.stock!==undefined){const components=state.data.records.find(r=>r.productKey===state.stock.productKey&&r.mechanismKey===state.stock.mechanismKey)?.components||[];const index=Number(t.dataset.quantity??t.dataset.stock),name=components[index]?.name;if(name){state.stock[t.dataset.quantity!==undefined?'quantities':'stock'][name]=t.value;renderStockResult();}}});
 document.addEventListener('input',event=>{const t=event.target;if(t.id==='product-search'){const pos=t.selectionStart;state.search=t.value;state.tablePage=1;renderProducts();$('product-search').focus();$('product-search').setSelectionRange(pos,pos);}const fields={'stock-audience':'audience','stock-buffer':'buffer','stock-custom-rate':'customRate'};if(fields[t.id]){state.stock[fields[t.id]]=t.value;renderStockResult();}});
 $('product-dialog').addEventListener('click',e=>{if(e.target===$('product-dialog')){const rect=e.target.getBoundingClientRect();if(e.clientX<rect.left||e.clientX>rect.right||e.clientY<rect.top||e.clientY>rect.bottom)e.target.close();}});
 $('tool-dialog').addEventListener('click',e=>{if(e.target===$('tool-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
