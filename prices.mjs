@@ -1,5 +1,5 @@
-import {queryPrices} from './price-model.mjs?v=19';
-import {proposalColumns,proposalCategories,proposalValues,createProposalWorkbook} from './proposal.mjs?v=19';
+import {queryPrices} from './price-model.mjs?v=20';
+import {proposalColumns,proposalCategories,proposalValues,proposalFilename,createProposalWorkbook} from './proposal.mjs?v=20';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const price=value=>typeof value==='number'?`¥${value.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:4})}`:value?esc(value):'<span class="price-missing">待补</span>';
 const date=value=>value?new Date(value).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}):'尚未同步';
@@ -80,7 +80,7 @@ export function createPriceModule({element,dialog,icon,toast}){
   const buttons=[...document.querySelectorAll('[data-price-export],[data-price-single]')];buttons.forEach(b=>b.disabled=true);
   try{
    const template=await getTemplate(),bytes=createProposalWorkbook(entries,template,state.drafts,{...state.catalog.images,...state.photos}),url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})),a=document.createElement('a');
-   a.href=url;a.download=`柏悦臻选产品提报表_${new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'})}_${entries.length}条.xlsx`;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);toast(`已生成 ${entries.length} 条规格提报表，${entries.filter(photo).length} 张产品图及付款比例图已嵌入。`);
+   a.href=url;a.download=proposalFilename(entries,state.drafts);a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);toast(`已生成 ${entries.length} 条规格提报表，${entries.filter(photo).length} 张产品图及付款比例图已嵌入。`);
   }catch(error){toast(error.message||'提报表生成失败，请重试。');}finally{buttons.forEach(b=>b.disabled=false);renderResults();}
  }
  function click(event){

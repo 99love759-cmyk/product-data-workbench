@@ -18,6 +18,13 @@ export function proposalValues(entry,overrides={}){
  // Settlement per smallest unit and per order are not a dropshipping quotation.
  return {...values,...overrides};
 }
+export function proposalFilename(entries,overrides={}){
+ const names=[...new Set(entries.map(entry=>String(proposalValues(entry,overrides[entry.id]).G||entry.name||'').replace(/[^\p{L}\p{N}]/gu,'')))].join('');
+ const encoder=new TextEncoder();let stem='',bytes=5;
+ // Leave room for the Excel extension within the usual 255-byte filename limit.
+ for(const char of `柏悦臻选产品提报表${names}`){const size=encoder.encode(char).length;if(bytes+size>255)break;stem+=char;bytes+=size;}
+ return `${stem}.xlsx`;
+}
 const xml=value=>String(value??'').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
 function dataRow(entry,index,styles,overrides){
  const values=proposalValues(entry,overrides),row=index+3;

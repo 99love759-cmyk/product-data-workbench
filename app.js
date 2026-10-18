@@ -1,7 +1,7 @@
-import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=19';
-import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=19';
-import {createPriceModule} from './prices.mjs?v=19';
-import {createProductPhotoLookup} from './product-photos.mjs?v=19';
+import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=20';
+import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=20';
+import {createPriceModule} from './prices.mjs?v=20';
+import {createProductPhotoLookup} from './product-photos.mjs?v=20';
 const $=id=>document.getElementById(id);
 function applyTheme(theme){const light=theme==='light';document.documentElement.dataset.theme=light?'light':'dark';$('theme-toggle').setAttribute('aria-checked',String(light));document.querySelector('meta[name="theme-color"]').content=light?'#f5f5f7':'#101011';try{localStorage.setItem('product-workbench-theme',light?'light':'dark');}catch{}}
 try{applyTheme(localStorage.getItem('product-workbench-theme')||'light');}catch{applyTheme('light');}
@@ -18,7 +18,7 @@ const time=v=>v?new Date(v).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hou
 const state={data:null,page:'overview',filters:{group:'',room:'',anchor:'',from:'',to:''},search:'',sort:'orders',tablePage:1,rateMode:'orders',status:null,boardTabs:{},boardSort:'orders',reportText:'',stock:{business:'',productKey:'',mechanismKey:'',audience:'',buffer:10,customRate:'',stock:{},quantities:{}}};
 let productPhoto=()=>null;
 let productPhotoSupplement=null;
-const productPhotoSupplementReady=fetch(new URL('./sales-product-photos.json?v=19',import.meta.url),{cache:'no-cache'}).then(response=>response.ok?response.json():null).then(supplement=>{productPhotoSupplement=supplement;if(state.data){productPhoto=createProductPhotoLookup(state.data.priceCatalog,supplement);render();}}).catch(()=>{});
+const productPhotoSupplementReady=fetch(new URL('./sales-product-photos.json?v=20',import.meta.url),{cache:'no-cache'}).then(response=>response.ok?response.json():null).then(supplement=>{productPhotoSupplement=supplement;if(state.data){productPhoto=createProductPhotoLookup(state.data.priceCatalog,supplement);render();}}).catch(()=>{});
 function productPhotoMarkup(product){const photo=productPhoto(product);return photo?`<img class="sales-product-photo" src="${esc(photo.dataUrl)}" alt="${esc(product.name)}产品图" width="48" height="48" loading="lazy" decoding="async">`:'';}
 try{const saved=JSON.parse(localStorage.getItem('yue-stock-plan-v2')||localStorage.getItem('yue-stock-plan-v1'));if(saved){const {room,anchor,...plan}=saved;if(room||anchor)plan.audience='';Object.assign(state.stock,plan);}}catch{}
 let sourceRefreshEnabled=remoteSource;
