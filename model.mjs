@@ -46,7 +46,7 @@ export function buildDataset(source) {
       if(!name) { if(r.every(c=>c==='')) active=null; continue; }
       if(/^(合计|总计|小计)$/.test(name)) {active=null;continue;}
       const continuation = active && ['直播日期','直播时间','主播','系统'].every(k=>clean(get(r,k))==='') && clean(get(r,'直播价'))==='';
-      const component={name,supplier:clean(get(r,'提报主体'))||(continuation?active.supplier:''),quantity:number(get(r,'拍一发几')),sourceUnits:number(get(r,'合计总量（最小颗粒度）')),sourceOrders:number(get(r,'合计单量')),roomOrders:roomNumbers(get(r,'各系统单量')),sourceRate:number(get(r,'峰值转换率')),row:i+1};
+      const component={name,supplier:clean(get(r,'提报主体'))||(continuation?active.supplier:''),quantity:number(get(r,'拍一发几')),sourceUnits:number(get(r,'合计总量（最小颗粒度）')),sourceOrders:number(get(r,'合计单量')),sourcePeak:number(get(r,'合计峰值在线人数')),roomOrders:roomNumbers(get(r,'各系统单量')),sourceRate:number(get(r,'峰值转换率')),row:i+1};
       if(continuation) {active.components.push(component);continue;}
       active={id:`${sheet.sheet_id}:${i+1}`,sheetId:sheet.sheet_id,sheet:sheet.title,group,row:i+1,date:dateValue(get(r,'直播日期')),time:timeValue(get(r,'直播时间')),anchor:clean(get(r,'主播')),supplier:component.supplier,rooms:rooms(get(r,'系统')),price:number(get(r,'直播价')),sourceOrders:component.sourceOrders,sourcePeak:number(get(r,'合计峰值在线人数')),roomOrders:component.roomOrders,roomPeaks:roomNumbers(get(r,'各系统峰值在线人数')),components:[component]};
       offers.push(active);
@@ -84,8 +84,9 @@ export function buildDataset(source) {
         if(different(c.sourceUnits,expected)) issue(`「${c.name}」原表总量为 ${c.sourceUnits}，按单量 × 拍发数量应为 ${expected}。${offer.derived?'网站使用重算值。':'网站保留原表值供核对。'}`);
         c.units=offer.pending?null:(offer.derived?expected:(c.sourceUnits??expected));
         for(const room of offer.rooms) if(has(c.roomOrders,room)&&has(offer.roomOrders,room)&&different(c.roomOrders[room],offer.roomOrders[room])) {offer.invalidRooms.push(room);issue(`组合组件「${c.name}」${room} 单量与主品不一致；已标记明细差异，组合备货按主品总订单计算。`);}
-        const expectedRate=c.units!==null&&offer.peak>0?c.units/offer.peak:null;
-        if(c.sourceRate!==null&&expectedRate!==null&&Math.abs(c.sourceRate-expectedRate)>0.000001&&!offer.derived) issue(`「${c.name}」原表转换率与件数 / 峰值不一致。`);
+        const originalOrders=c.sourceOrders??offer.orders,originalPeak=c.sourcePeak??offer.peak;
+        const expectedRate=originalOrders!==null&&originalPeak>0?originalOrders/originalPeak:null;
+        if(c.sourceRate!==null&&expectedRate!==null&&Math.abs(c.sourceRate-expectedRate)>0.000001&&!offer.derived) issue(`「${c.name}」原表转换率与订单量 / 峰值在线人数不一致。`);
       }
       offer.totalQuantity=offer.components.every(c=>c.quantity>0)?sum(offer.components.map(c=>c.quantity)):null;
       offer.units=offer.components.every(c=>c.units!==null)?sum(offer.components.map(c=>c.units)):null;
