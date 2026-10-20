@@ -96,9 +96,13 @@ export function buildDataset(source) {
     }
   }
   if(!sheetInfo.some(s=>s.type==='detail')) throw Error('没有找到含直播日期、产品名称的明细工作表。');
+  return assembleSalesDataset(source.name,source.fetchedAt,sheetInfo,records,issues);
+}
+
+export function assembleSalesDataset(name,fetchedAt,sheetInfo,records,issues=records.flatMap(r=>r.issues||[])) {
   const products=[...new Map(records.map(r=>[r.productKey,{key:r.productKey,name:r.name,bundle:r.bundle,group:r.group,components:r.components.map(c=>c.name)}])).values()].sort((a,b)=>a.name.localeCompare(b.name,'zh-CN'));
   const businesses=[...new Set(sheetInfo.filter(s=>s.type!=='other').map(s=>s.group))].map(name=>({name,detailSheets:sheetInfo.filter(s=>s.group===name&&s.type==='detail').map(s=>s.id),summarySheets:sheetInfo.filter(s=>s.group===name&&s.type==='summary').map(s=>s.id),...summarize(records.filter(r=>r.group===name))}));
-  return {version:2,name:source.name||'产品售卖数据表',sourceUrl:SOURCE_URL,fetchedAt:source.fetchedAt,sheets:sheetInfo,businesses,records,products,issues,rooms:[...new Set(records.flatMap(r=>r.rooms))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),anchors:[...new Set(records.map(r=>r.anchor).filter(Boolean))].sort(),dateRange:{from:records.map(r=>r.date).filter(Boolean).sort()[0]??null,to:records.map(r=>r.date).filter(Boolean).sort().at(-1)??null}};
+  return {version:2,name:name||'产品售卖数据表',sourceUrl:SOURCE_URL,fetchedAt,sheets:sheetInfo,businesses,records,products,issues,rooms:[...new Set(records.flatMap(r=>r.rooms))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true})),anchors:[...new Set(records.map(r=>r.anchor).filter(Boolean))].sort(),dateRange:{from:records.map(r=>r.date).filter(Boolean).sort()[0]??null,to:records.map(r=>r.date).filter(Boolean).sort().at(-1)??null}};
 }
 
 export function viewRecord(r,room='') {

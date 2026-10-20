@@ -49,7 +49,7 @@ export async function requestData(){
  return snapshot();
 }
 export async function requestStatus(){return cloud&&!remoteSource?{running:false,error:null}:apiRequest('/api/status');}
-export async function requestRefresh(){
+export async function requestRefresh(scope='all'){
   if(cloud&&!remoteSource)return requestData();
-  return apiRequest('/api/refresh',{method:'POST',headers:{'X-Product-Dashboard':'1'}});
+  return apiRequest('/api/refresh'+(scope==='all'?'':'?scope='+encodeURIComponent(scope)),{method:'POST',headers:{'X-Product-Dashboard':'1'}});
 }

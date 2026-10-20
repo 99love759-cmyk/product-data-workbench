@@ -1,7 +1,7 @@
-import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=21';
-import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=21';
-import {createPriceModule} from './prices.mjs?v=21';
-import {createProductPhotoLookup} from './product-photos.mjs?v=21';
+import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=22';
+import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=22';
+import {createPriceModule} from './prices.mjs?v=22';
+import {createProductPhotoLookup} from './product-photos.mjs?v=22';
 const $=id=>document.getElementById(id);
 function applyTheme(theme){const light=theme==='light';document.documentElement.dataset.theme=light?'light':'dark';$('theme-toggle').setAttribute('aria-checked',String(light));document.querySelector('meta[name="theme-color"]').content=light?'#f5f5f7':'#101011';try{localStorage.setItem('product-workbench-theme',light?'light':'dark');}catch{}}
 try{applyTheme(localStorage.getItem('product-workbench-theme')||'light');}catch{applyTheme('light');}
@@ -18,10 +18,12 @@ const time=v=>v?new Date(v).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hou
 const state={data:null,page:'overview',filters:{group:'',room:'',anchor:'',from:'',to:''},search:'',sort:'orders',tablePage:1,rateMode:'orders',status:null,boardTabs:{},boardSort:'orders',reportText:'',stock:{business:'',productKey:'',mechanismKey:'',audience:'',buffer:10,customRate:'',stock:{},quantities:{}}};
 let productPhoto=()=>null;
 let productPhotoSupplement=null;
-const productPhotoSupplementReady=fetch(new URL('./sales-product-photos.json?v=21',import.meta.url),{cache:'no-cache'}).then(response=>response.ok?response.json():null).then(supplement=>{productPhotoSupplement=supplement;if(state.data){productPhoto=createProductPhotoLookup(state.data.priceCatalog,supplement);render();}}).catch(()=>{});
+const productPhotoSupplementReady=fetch(new URL('./sales-product-photos.json?v=22',import.meta.url),{cache:'no-cache'}).then(response=>response.ok?response.json():null).then(supplement=>{productPhotoSupplement=supplement;if(state.data){productPhoto=createProductPhotoLookup(state.data.priceCatalog,supplement);render();}}).catch(()=>{});
 function productPhotoMarkup(product){const photo=productPhoto(product);return photo?`<img class="sales-product-photo" src="${esc(photo.dataUrl)}" alt="${esc(product.name)}产品图" width="48" height="48" loading="lazy" decoding="async">`:'';}
 try{const saved=JSON.parse(localStorage.getItem('yue-stock-plan-v2')||localStorage.getItem('yue-stock-plan-v1'));if(saved){const {room,anchor,...plan}=saved;if(room||anchor)plan.audience='';Object.assign(state.stock,plan);}}catch{}
 let sourceRefreshEnabled=remoteSource;
+let selectedRefreshScope='all',scopeAvailable=true;
+try{const saved=localStorage.getItem('workbench-sync-scope');if(saved&&/^(?:all|sales|prices|(?:sales|prices):[\w-]{1,128})$/.test(saved))selectedRefreshScope=saved;}catch{}
 try{sourceRefreshEnabled=remoteSource?localStorage.getItem('workbench-auto-source')!=='false':cloud&&localStorage.getItem('workbench-read-source')==='true';}catch{}
 const priceModule=createPriceModule({element:$('prices-view'),dialog:$('price-dialog'),icon,toast});
 const titles={prices:['价格查询','产品价格查询','搜索各子表的产品报价，按规格生成提报表。'],rooms:['直播间看板','直播间数据看板','按系统分组看订单与转化，横向比较产品售卖表现。'],overview:['数据概览','产品数据概览','从产品表现到直播间转化，把每一场销售看清楚。'],products:['产品表现','每一款产品，都看得清楚','比较产品、追踪转化，查看组合装与每场直播明细。'],stock:['备货计算','产品备货计划','综合产品的全部有效历史，预测订单并拆分组件备货。'],quality:['数据与口径','数据有来处，计算有依据','查看数据覆盖、待补信息和每一个指标的计算方式。']};
@@ -41,6 +43,7 @@ function sourceCoverage(){return businesses().map(b=>{const sheets=state.data.sh
 
 function setData(data){
  if(!data)return;state.data=data;productPhoto=createProductPhotoLookup(data.priceCatalog,productPhotoSupplement);if(state.stock.business&&!businesses().some(b=>b.name===state.stock.business))state.stock.business='';
+ populateRefreshScope();
  updateSourceLink();
  populateFilters();
  if(!data.products.some(p=>p.key===state.stock.productKey)&&!(state.stock.business&&businesses().some(b=>b.name===state.stock.business)&&!data.products.some(p=>p.group===state.stock.business))){
@@ -50,6 +53,21 @@ function setData(data){
  if(state.stock.mechanismKey&&!data.records.some(r=>r.productKey===state.stock.productKey&&r.mechanismKey===state.stock.mechanismKey))Object.assign(state.stock,{mechanismKey:'',audience:'',quantities:{}});
  render();
 }
+function populateRefreshScope(){
+ const sales=[...new Map((state.data?.sheets||[]).filter(s=>s.type==='detail').map(s=>[s.group||businessName(s.title),s])).values()];
+ const prices=state.data?.priceCatalog?.sheets||[],select=$('refresh-scope');
+ const values=['all','sales','prices',...sales.map(s=>'sales:'+s.id),...prices.map(s=>'prices:'+s.id)];
+ scopeAvailable=values.includes(selectedRefreshScope);
+ select.innerHTML='<option value="all">全部原表</option><optgroup label="销售数据表"><option value="sales">销售 · 全部业务</option>'+sales.map(s=>`<option value="sales:${esc(s.id)}">销售 · ${esc(s.group||businessName(s.title))}</option>`).join('')+'</optgroup><optgroup label="自营品价格表"><option value="prices">价格 · 全部子表</option>'+prices.map(s=>`<option value="prices:${esc(s.id)}">价格 · ${esc(s.title)}</option>`).join('')+'</optgroup>';
+ if(!scopeAvailable)select.insertAdjacentHTML('beforeend',`<option value="${esc(selectedRefreshScope)}" disabled>所选表已移除，请重新选择</option>`);
+ select.value=selectedRefreshScope;
+ select.disabled=Boolean(state.status?.running);$('refresh').disabled=Boolean(state.status?.running)||!scopeAvailable;
+ $('refresh-scope-label').hidden=cloud&&!remoteSource;
+ const [kind,id]=selectedRefreshScope.split(':'),sheet=(kind==='sales'?state.data?.sheets:prices)?.find(s=>s.id===id);
+ const updated=sheet?.fetchedAt||(kind==='sales'?state.data?.salesFetchedAt:state.data?.priceCatalog?.fetchedAt);
+ select.title=scopeAvailable?(id?`上次同步 ${time(updated)}`:'按所选范围读取原表；自动同步也使用此范围。'):'请选择有效的原表';
+}
+$('refresh-scope').addEventListener('change',event=>{selectedRefreshScope=event.target.value;try{localStorage.setItem('workbench-sync-scope',selectedRefreshScope);}catch{}populateRefreshScope();});
 function render(){renderBusinessTabs();updateRange();if(!state.data){if(state.status?.error)$(`${state.page}-view`).innerHTML=`<div class="empty-state"><h2>暂未获取到数据</h2><p>${esc(state.status.error)}</p><p class="section-note">点击右上角“刷新最新数据”重试。</p></div>`;return;}if(state.page==='overview')renderOverview();if(state.page==='rooms')renderRooms();if(state.page==='products')renderProducts();if(state.page==='stock')renderStock();if(state.page==='quality')renderQuality();if(state.page==='prices')priceModule.update(state.data.priceCatalog);}
 function rateToggle(){return `<div class="segmented" aria-label="转化率口径"><button data-rate="orders" class="${state.rateMode==='orders'?'active':''}">按订单</button><button data-rate="units" class="${state.rateMode==='units'?'active':''}">按件数</button></div>`;}
 function renderOverview(){const records=filtered(),s=summarize(records),pending=s.pending;
@@ -226,7 +244,7 @@ function setSourceRefresh(enabled){
  $('source-refresh-toggle').setAttribute('aria-checked',String(sourceRefreshEnabled));
  $('source-refresh-toggle').lastElementChild.textContent=remoteSource?'自动同步':'读取原表';
  $('source-refresh-toggle').setAttribute('aria-label',remoteSource?'打开或刷新网页时自动读取企业微信原表':'重新读取企业微信原表');
- $('source-refresh-hint').textContent=remoteSource?(sourceRefreshEnabled?'手机、电脑打开或刷新页面时自动同步，读取期间可继续查看已保存数据。':'自动读取已关闭；可点击「重新读取原表」手动同步。'):(sourceRefreshEnabled?'开启后，点击「读取原表并发布」，在更新电脑上完成更新。':'关闭时，只获取上次成功发布的数据。');
+ $('source-refresh-hint').textContent=remoteSource?(sourceRefreshEnabled?'手机、电脑打开或刷新页面时自动同步，读取期间可继续查看已保存数据。':'自动读取已关闭；可点击「同步原表」手动同步。'):(sourceRefreshEnabled?'开启后，点击「读取原表并发布」，在更新电脑上完成更新。':'关闭时，只获取上次成功发布的数据。');
  $('source-refresh-toggle').title=$('source-refresh-hint').textContent;
  $('refresh').hidden=!remoteSource&&sourceRefreshEnabled;
  $('source-refresh-link').hidden=remoteSource||!sourceRefreshEnabled;
@@ -235,7 +253,7 @@ function setSourceRefresh(enabled){
 }
 function showSourceUpdate(){
  if(remoteSource){
-  $('tool-content').innerHTML='<div class="dialog-head"><div><h2>云端自动同步</h2><p>手机和电脑共享同一份原表数据。</p></div><button class="dialog-close" id="close-tool" aria-label="关闭">×</button></div><div class="dialog-body source-update-guide"><p>开启顶部「自动同步」后，每次打开或刷新网页都会发起云端读取，无需启动本机服务。也可随时点击「重新读取原表」手动更新。</p><p>同步时先显示上次成功保存的数据，销售表和价格表全部读取、校验成功后再更新。数据更新时间是实际读取原表成功的时间。</p><p>多人同时刷新会合并为同一轮读取；10 秒内连续完成的刷新复用刚获取的数据，避免重复请求。授权失效或同步失败时会保留上次成功数据并明确提示。</p></div>';
+  $('tool-content').innerHTML='<div class="dialog-head"><div><h2>云端自动同步</h2><p>手机和电脑共享同一份原表数据。</p></div><button class="dialog-close" id="close-tool" aria-label="关闭">×</button></div><div class="dialog-body source-update-guide"><p>开启顶部「自动同步」后，每次打开或刷新网页都会发起云端读取，无需启动本机服务。也可随时点击「同步原表」手动更新。</p><p>在同步按钮旁选择「同步范围」，可更新全部原表、整张销售或价格表，也可只选某个业务子表。所选范围读取、校验成功后更新；其他表保留上次成功数据。销售同一业务的汇总和明细一起读取。</p><p>选择会在本设备记住，自动同步同样按所选范围执行。相同范围的同步会合并；如果其他设备正在同步不同表格，会提示等待当前同步完成后重试。授权失效或同步失败时会保留上次成功数据并明确提示。</p></div>';
   $('tool-dialog').showModal();return;
  }
  $('tool-content').innerHTML='<div class="dialog-head"><div><h2>更新原表并发布</h2><p>更新后，其他人仍使用原来的分享网址。</p></div><button class="dialog-close" id="close-tool" aria-label="关闭">×</button></div><div class="dialog-body source-update-guide"><p>请在保存了企业微信授权的更新电脑上操作：</p><ol><li>先双击「启动产品分析」，启动本机服务。</li><li>开启顶部「读取原表」，点击「读取原表并发布」。</li><li>在打开的本机页面等待「云端已更新」，再回到分享页，点击「获取已发布数据」。</li></ol><p>也可以直接双击「更新分享网站」，自动读取并发布。</p><small>只需更新时让这台电脑开机联网。发布完成后即可关机，其他人仍可查看已发布的数据。手机和其他电脑可获取已发布数据。</small></div>';
@@ -245,9 +263,25 @@ setSourceRefresh(sourceRefreshEnabled);
 $('source-refresh-link').addEventListener('click',()=>toast('请在本机更新页等待发布完成'));
 
 let pollTimer=null;
-function syncStatus(status){state.status=status;$('refresh').disabled=status.running;$('refresh').classList.toggle('spin',status.running);$('refresh').innerHTML=`${icon('refresh')}<span>${status.running?'正在刷新…':remoteSource?'重新读取原表':cloud?'获取已发布数据':'读取原表并发布'}</span>`;$('sync-bar').className=`sync-bar ${status.running?'running':status.error?'error':''}`;$('sync-message').textContent=status.running?`${status.message}${status.step!=null?`（${status.step}/${status.total}）`:''}`:status.error?`${status.error} ${state.data?'当前显示上次成功的数据。':''}`:state.data?(remoteSource?(status.fetchedAt?'已同步企业微信 · 所有设备共享数据已更新':'已载入云端保存数据'):cloud?'已载入云端最新发布数据 · 修改原表后请开启顶部开关读取并发布':status.publicationEnabled?status.message==='已获取最新数据'?'已同步企业微信 · 云端已更新':status.message:'已同步企业微信 · 打开页面自动刷新'):status.message;$('sync-time').textContent=state.data?`数据更新时间 ${time(state.data.fetchedAt)}`:'';}
-async function poll(){try{const status=await requestStatus();syncStatus(status);if(status.running){pollTimer=setTimeout(poll,1400);}else{const payload=await requestData();setData(payload.data);syncStatus(payload.status);if(!status.error)toast(status.publicationEnabled?'原表已刷新，云端分享已更新':'已获取最新的产品数据');else if(!state.data)render();}}catch(error){syncStatus({...state.status,running:false,error:error.message});}}
-async function startRefresh(){clearTimeout(pollTimer);syncStatus({running:true,step:0,total:1,message:remoteSource?'正在从云端连接企业微信…':cloud?'正在获取已发布数据…':'正在连接企业微信…',error:null});try{const payload=await requestRefresh();if(cloud&&!remoteSource){const unchanged=state.data?.fetchedAt===payload.data.fetchedAt;setData(payload.data);syncStatus(payload.status);toast(unchanged?'已是最新发布版本':'已载入云端最新发布数据');}else{syncStatus(payload);pollTimer=setTimeout(poll,1000);}}catch(error){syncStatus({running:false,error:error.message});render();}}
+function syncStatus(status){
+ state.status=status;$('refresh').disabled=Boolean(status.running)||!scopeAvailable;$('refresh-scope').disabled=Boolean(status.running);
+ $('refresh').classList.toggle('spin',status.running);$('refresh').innerHTML=`${icon('refresh')}<span>${status.running?'正在同步…':remoteSource?'同步原表':cloud?'获取已发布数据':'读取原表并发布'}</span>`;
+ $('sync-bar').className=`sync-bar ${status.running?'running':status.error?'error':''}`;
+ $('sync-message').textContent=status.running?`${status.message}${status.step!=null?`（${status.step}/${status.total}）`:''}`:status.error?`${status.error} ${state.data?'当前显示上次成功的数据。':''}`:state.data?(remoteSource?(state.data.lastSync?`已同步${state.data.lastSync.label} · 所有设备共享`:status.fetchedAt?'已同步企业微信 · 所有设备共享数据已更新':'已载入云端保存数据'):cloud?'已载入云端最新发布数据':status.message):status.message;
+ $('sync-time').textContent=state.data?`${state.data.lastSync&&state.data.lastSync.scope!=='all'?'最近同步':'数据更新时间'} ${time(state.data.fetchedAt)}`:'';
+}
+
+async function poll(){try{const status=await requestStatus();if(status.running){syncStatus(status);pollTimer=setTimeout(poll,1400);}else{const payload=await requestData();setData(payload.data);syncStatus(payload.status);if(!status.error)toast(status.publicationEnabled?'原表已刷新，云端分享已更新':'已获取最新的产品数据');else if(!state.data)render();}}catch(error){syncStatus({...state.status,running:false,error:error.message});}}
+async function startRefresh(){
+ if(!scopeAvailable){toast('所选表已移除，请先重新选择同步范围');return;}
+ clearTimeout(pollTimer);syncStatus({running:true,scope:selectedRefreshScope,step:0,total:1,message:remoteSource?'正在从云端连接企业微信…':cloud?'正在获取已发布数据…':'正在连接企业微信…',error:null});
+ try{
+  const payload=await requestRefresh(selectedRefreshScope);
+  if(cloud&&!remoteSource){const unchanged=state.data?.fetchedAt===payload.data.fetchedAt;setData(payload.data);syncStatus(payload.status);toast(unchanged?'已是最新发布版本':'已载入云端最新发布数据');}
+  else{syncStatus(payload);if(payload.scopeBusy)toast('其他设备正在同步不同表格，请等待完成后再同步所选表');pollTimer=setTimeout(poll,1000);}
+ }catch(error){syncStatus({running:false,error:error.message});render();}
+}
+
 document.addEventListener('click',event=>{const t=event.target.closest('button,[data-product]');if(!t)return;if(t.id==='theme-toggle'){applyTheme(document.documentElement.dataset.theme==='light'?'dark':'light');return;}if(t.dataset.business!==undefined){state.filters.group=t.dataset.business;state.tablePage=1;populateFilters();render();return;}if(t.dataset.page){navigate(t.dataset.page);return;}if(t.dataset.go){navigate(t.dataset.go);return;}if(t.dataset.plan){planFor(t.dataset.plan);return;}if(t.dataset.product){showProduct.roomGroup=t.dataset.roomGroup||null;showProduct(t.dataset.product);return;}if(t.dataset.boardTab){state.boardTabs[t.dataset.boardGroup]=t.dataset.boardTab;renderRooms();return;}if(t.dataset.historyDate){setDateRange(t.dataset.historyDate,t.dataset.historyDate);$('tool-dialog').close();navigate('rooms');return;}if(t.dataset.range){applyDateRange(t.dataset.range);return;}if(t.id==='show-history'){showHistory();return;}if(t.id==='show-report'){showReport();return;}if(t.id==='close-tool')$('tool-dialog').close();if(t.id==='copy-report')copyReport();if(t.id==='download-report')downloadReport();if(t.dataset.rate){state.rateMode=t.dataset.rate;render();return;}if(t.id==='source-refresh-toggle'){setSourceRefresh(!sourceRefreshEnabled);if(remoteSource&&sourceRefreshEnabled&&!state.status?.running)startRefresh();return;}if(t.id==='source-update'){showSourceUpdate();return;}if(t.id==='refresh'||t.id==='snapshot-refresh')startRefresh();if(t.id==='reset-filters'){state.filters={group:'',room:'',anchor:'',from:'',to:''};['group','room','anchor','from','to'].forEach(k=>$(`filter-${k}`).value='');populateFilters();state.tablePage=1;render();}if(t.id==='prev-page'){state.tablePage--;render();}if(t.id==='next-page'){state.tablePage++;render();}if(t.id==='export-products')exportProducts();if(t.id==='export-stock')exportStock();if(t.id==='close-dialog'||t.id==='close-dialog-bottom')$('product-dialog').close();if(t.id==='stock-reset'){Object.assign(state.stock,{audience:'',buffer:10,customRate:'',stock:{},quantities:{}});renderStock();}});
 document.addEventListener('change',event=>{const t=event.target;if(t.id?.startsWith('filter-')){state.filters[t.id.slice(7)]=t.value;if(t.id==='filter-group')populateFilters();state.tablePage=1;render();}if(t.id==='board-sort'){state.boardSort=t.value;renderRooms();}if(t.id==='product-sort'){state.sort=t.value;render();}if(t.id==='stock-business'){state.stock.business=t.value;const product=productGroups(state.data.records.filter(r=>r.group===t.value)).sort((a,b)=>b.orders-a.orders)[0];planFor(product?.key||'');}const fields={'stock-mechanism':'mechanismKey'};if(fields[t.id]){state.stock[fields[t.id]]=t.value;state.stock.audience='';state.stock.customRate='';if(t.id==='stock-mechanism'){state.stock.quantities={};state.stock.stock={};}renderStock();}if(t.dataset.quantity!==undefined||t.dataset.stock!==undefined){const components=state.data.records.find(r=>r.productKey===state.stock.productKey&&r.mechanismKey===state.stock.mechanismKey)?.components||[];const index=Number(t.dataset.quantity??t.dataset.stock),name=components[index]?.name;if(name){state.stock[t.dataset.quantity!==undefined?'quantities':'stock'][name]=t.value;renderStockResult();}}});
 document.addEventListener('input',event=>{const t=event.target;if(t.id==='product-search'){const pos=t.selectionStart;state.search=t.value;state.tablePage=1;renderProducts();$('product-search').focus();$('product-search').setSelectionRange(pos,pos);}const fields={'stock-audience':'audience','stock-buffer':'buffer','stock-custom-rate':'customRate'};if(fields[t.id]){state.stock[fields[t.id]]=t.value;renderStockResult();}});
