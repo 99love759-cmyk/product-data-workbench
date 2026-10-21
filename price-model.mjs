@@ -37,7 +37,7 @@ export function buildPriceCatalog(source,sourceUrl=''){
    // Keep each quoted mechanism and price as its own row, even for identical names.
    entries.push(entry);count++;
   }
-  sheets.push({id:sheet.sheet_id,title:sheet.title,entries:count,headerRow:headerRow+1});
+  sheets.push({id:sheet.sheet_id,title:sheet.title,entries:count,headerRow:headerRow+1,fetchedAt:sheet.fetchedAt||source.fetchedAt});
  }
  return {version:1,fetchedAt:source.fetchedAt,sourceUrl,sheets,entries};
 }

@@ -1,7 +1,7 @@
-import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=23';
-import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=23';
-import {createPriceModule} from './prices.mjs?v=23';
-import {createProductPhotoLookup} from './product-photos.mjs?v=23';
+import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=24';
+import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=24';
+import {createPriceModule} from './prices.mjs?v=24';
+import {createProductPhotoLookup} from './product-photos.mjs?v=24';
 const $=id=>document.getElementById(id);
 function applyTheme(theme){const light=theme==='light';document.documentElement.dataset.theme=light?'light':'dark';$('theme-toggle').setAttribute('aria-checked',String(light));document.querySelector('meta[name="theme-color"]').content=light?'#f5f5f7':'#101011';try{localStorage.setItem('product-workbench-theme',light?'light':'dark');}catch{}}
 try{applyTheme(localStorage.getItem('product-workbench-theme')||'light');}catch{applyTheme('light');}
@@ -18,7 +18,7 @@ const time=v=>v?new Date(v).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hou
 const state={data:null,page:'overview',filters:{group:'',room:'',anchor:'',from:'',to:''},search:'',sort:'orders',tablePage:1,rateMode:'orders',status:null,boardTabs:{},boardSort:'orders',reportText:'',stock:{business:'',productKey:'',mechanismKey:'',audience:'',buffer:10,customRate:'',stock:{},quantities:{}}};
 let productPhoto=()=>null;
 let productPhotoSupplement=null;
-const productPhotoSupplementReady=fetch(new URL('./sales-product-photos.json?v=23',import.meta.url),{cache:'no-cache'}).then(response=>response.ok?response.json():null).then(supplement=>{productPhotoSupplement=supplement;if(state.data){productPhoto=createProductPhotoLookup(state.data.priceCatalog,supplement);render();}}).catch(()=>{});
+const productPhotoSupplementReady=fetch(new URL('./sales-product-photos.json?v=24',import.meta.url),{cache:'no-cache'}).then(response=>response.ok?response.json():null).then(supplement=>{productPhotoSupplement=supplement;if(state.data){productPhoto=createProductPhotoLookup(state.data.priceCatalog,supplement);render();}}).catch(()=>{});
 function productPhotoMarkup(product){const photo=productPhoto(product);return photo?`<img class="sales-product-photo" src="${esc(photo.dataUrl)}" alt="${esc(product.name)}产品图" width="48" height="48" loading="lazy" decoding="async">`:'';}
 try{const saved=JSON.parse(localStorage.getItem('yue-stock-plan-v2')||localStorage.getItem('yue-stock-plan-v1'));if(saved){const {room,anchor,...plan}=saved;if(room||anchor)plan.audience='';Object.assign(state.stock,plan);}}catch{}
 let sourceRefreshEnabled=remoteSource;
@@ -253,7 +253,7 @@ function setSourceRefresh(enabled){
 }
 function showSourceUpdate(){
  if(remoteSource){
-  $('tool-content').innerHTML='<div class="dialog-head"><div><h2>云端自动同步</h2><p>手机和电脑共享同一份原表数据。</p></div><button class="dialog-close" id="close-tool" aria-label="关闭">×</button></div><div class="dialog-body source-update-guide"><p>开启顶部「自动同步」后，每次打开或刷新网页都会发起云端读取，无需启动本机服务。也可随时点击「同步原表」手动更新。</p><p>在同步按钮旁选择「同步范围」，可更新全部原表、整张销售或价格表，也可只选某个业务子表。所选范围读取、校验成功后更新；其他表保留上次成功数据。销售同一业务的汇总和明细一起读取。</p><p>选择会在本设备记住，自动同步同样按所选范围执行。相同范围的同步会合并；如果其他设备正在同步不同表格，会提示等待当前同步完成后重试。授权失效或同步失败时会保留上次成功数据并明确提示。</p></div>';
+  $('tool-content').innerHTML='<div class="dialog-head"><div><h2>云端自动同步</h2><p>手机和电脑共享同一份原表数据；产品报价与图片和结算工作台共用。</p></div><button class="dialog-close" id="close-tool" aria-label="关闭">×</button></div><div class="dialog-body source-update-guide"><p>开启顶部「自动同步」后，每次打开或刷新网页都会发起云端读取，无需启动本机服务。也可随时点击「同步原表」手动更新。</p><p>在同步按钮旁选择「同步范围」，可更新全部原表、整张销售或价格表，也可只选某个业务子表。所选范围读取、校验成功后更新；其他表保留上次成功数据。销售同一业务的汇总和明细一起读取。</p><p>选择会在本设备记住，自动同步同样按所选范围执行。自动同步在5分钟内复用已同步的产品资料，手动同步会重新读取所选原表。相同范围的同步会合并；如果其他设备正在同步不同表格，会提示等待当前同步完成后重试。授权失效或同步失败时会保留上次成功数据并明确提示。</p></div>';
   $('tool-dialog').showModal();return;
  }
  $('tool-content').innerHTML='<div class="dialog-head"><div><h2>更新原表并发布</h2><p>更新后，其他人仍使用原来的分享网址。</p></div><button class="dialog-close" id="close-tool" aria-label="关闭">×</button></div><div class="dialog-body source-update-guide"><p>请在保存了企业微信授权的更新电脑上操作：</p><ol><li>先双击「启动产品分析」，启动本机服务。</li><li>开启顶部「读取原表」，点击「读取原表并发布」。</li><li>在打开的本机页面等待「云端已更新」，再回到分享页，点击「获取已发布数据」。</li></ol><p>也可以直接双击「更新分享网站」，自动读取并发布。</p><small>只需更新时让这台电脑开机联网。发布完成后即可关机，其他人仍可查看已发布的数据。手机和其他电脑可获取已发布数据。</small></div>';
@@ -272,11 +272,11 @@ function syncStatus(status){
 }
 
 async function poll(){try{const status=await requestStatus();if(status.running){syncStatus(status);pollTimer=setTimeout(poll,1400);}else{const payload=await requestData();setData(payload.data);syncStatus(payload.status);if(!status.error)toast(status.publicationEnabled?'原表已刷新，云端分享已更新':'已获取最新的产品数据');else if(!state.data)render();}}catch(error){syncStatus({...state.status,running:false,error:error.message});}}
-async function startRefresh(){
+async function startRefresh(automatic=false){
  if(!scopeAvailable){toast('所选表已移除，请先重新选择同步范围');return;}
  clearTimeout(pollTimer);syncStatus({running:true,scope:selectedRefreshScope,step:0,total:1,message:remoteSource?'正在从云端连接企业微信…':cloud?'正在获取已发布数据…':'正在连接企业微信…',error:null});
  try{
-  const payload=await requestRefresh(selectedRefreshScope);
+  const payload=await requestRefresh(selectedRefreshScope,{automatic});
   if(cloud&&!remoteSource){const unchanged=state.data?.fetchedAt===payload.data.fetchedAt;setData(payload.data);syncStatus(payload.status);toast(unchanged?'已是最新发布版本':'已载入云端最新发布数据');}
   else{syncStatus(payload);if(payload.scopeBusy)toast('其他设备正在同步不同表格，请等待完成后再同步所选表');pollTimer=setTimeout(poll,1000);}
  }catch(error){syncStatus({running:false,error:error.message});render();}
@@ -291,5 +291,5 @@ window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)));
 navigate(location.hash.slice(1)||'overview');
 if(!cloud||remoteSource){try{const payload=await requestData();setData(payload.data);syncStatus(payload.status);}catch(error){syncStatus({running:false,error:error.message});}}
 // One fresh read per page opening, shared on the server if another tab is already refreshing.
-if(!remoteSource||sourceRefreshEnabled)startRefresh();
-window.addEventListener('pageshow',event=>{if(event.persisted&&(!remoteSource||sourceRefreshEnabled))startRefresh();});
+if(!remoteSource||sourceRefreshEnabled)startRefresh(true);
+window.addEventListener('pageshow',event=>{if(event.persisted&&(!remoteSource||sourceRefreshEnabled))startRefresh(true);});
