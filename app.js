@@ -1,7 +1,7 @@
-import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=24';
-import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=24';
-import {createPriceModule} from './prices.mjs?v=24';
-import {createProductPhotoLookup} from './product-photos.mjs?v=24';
+import {summarize,viewRecord,predict,roomGroups,dailySummaries,businessName} from './model.mjs?v=25';
+import {cloud,remoteSource,requestData,requestStatus,requestRefresh} from './data-client.mjs?v=25';
+import {createPriceModule} from './prices.mjs?v=25';
+import {createProductPhotoLookup} from './product-photos.mjs?v=25';
 const $=id=>document.getElementById(id);
 function applyTheme(theme){const light=theme==='light';document.documentElement.dataset.theme=light?'light':'dark';$('theme-toggle').setAttribute('aria-checked',String(light));document.querySelector('meta[name="theme-color"]').content=light?'#f5f5f7':'#101011';try{localStorage.setItem('product-workbench-theme',light?'light':'dark');}catch{}}
 try{applyTheme(localStorage.getItem('product-workbench-theme')||'light');}catch{applyTheme('light');}
@@ -18,7 +18,7 @@ const time=v=>v?new Date(v).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hou
 const state={data:null,page:'overview',filters:{group:'',room:'',anchor:'',from:'',to:''},search:'',sort:'orders',tablePage:1,rateMode:'orders',status:null,boardTabs:{},boardSort:'orders',reportText:'',stock:{business:'',productKey:'',mechanismKey:'',audience:'',buffer:10,customRate:'',stock:{},quantities:{}}};
 let productPhoto=()=>null;
 let productPhotoSupplement=null;
-const productPhotoSupplementReady=fetch(new URL('./sales-product-photos.json?v=24',import.meta.url),{cache:'no-cache'}).then(response=>response.ok?response.json():null).then(supplement=>{productPhotoSupplement=supplement;if(state.data){productPhoto=createProductPhotoLookup(state.data.priceCatalog,supplement);render();}}).catch(()=>{});
+const productPhotoSupplementReady=fetch(new URL('./sales-product-photos.json?v=25',import.meta.url),{cache:'no-cache'}).then(response=>response.ok?response.json():null).then(supplement=>{productPhotoSupplement=supplement;if(state.data){productPhoto=createProductPhotoLookup(state.data.priceCatalog,supplement);render();}}).catch(()=>{});
 function productPhotoMarkup(product){const photo=productPhoto(product);return photo?`<img class="sales-product-photo" src="${esc(photo.dataUrl)}" alt="${esc(product.name)}产品图" width="48" height="48" loading="lazy" decoding="async">`:'';}
 try{const saved=JSON.parse(localStorage.getItem('yue-stock-plan-v2')||localStorage.getItem('yue-stock-plan-v1'));if(saved){const {room,anchor,...plan}=saved;if(room||anchor)plan.audience='';Object.assign(state.stock,plan);}}catch{}
 let sourceRefreshEnabled=remoteSource;
@@ -26,7 +26,7 @@ let selectedRefreshScope='all',scopeAvailable=true;
 try{const saved=localStorage.getItem('workbench-sync-scope');if(saved&&/^(?:all|sales|prices|(?:sales|prices):[\w-]{1,128})$/.test(saved))selectedRefreshScope=saved;}catch{}
 try{sourceRefreshEnabled=remoteSource?localStorage.getItem('workbench-auto-source')!=='false':cloud&&localStorage.getItem('workbench-read-source')==='true';}catch{}
 const priceModule=createPriceModule({element:$('prices-view'),dialog:$('price-dialog'),icon,toast});
-const titles={prices:['价格查询','产品价格查询','搜索各子表的产品报价，按规格生成提报表。'],rooms:['直播间看板','直播间数据看板','按系统分组看订单与转化，横向比较产品售卖表现。'],overview:['数据概览','产品数据概览','从产品表现到直播间转化，把每一场销售看清楚。'],products:['产品表现','每一款产品，都看得清楚','比较产品、追踪转化，查看组合装与每场直播明细。'],stock:['备货计算','产品备货计划','综合产品的全部有效历史，预测订单并拆分组件备货。'],quality:['数据与口径','数据有来处，计算有依据','查看数据覆盖、待补信息和每一个指标的计算方式。']};
+const titles={prices:['产品查询','产品查询','搜索各子表的产品报价，按规格生成提报表。'],rooms:['直播间看板','直播间数据看板','按系统分组看订单与转化，横向比较产品售卖表现。'],overview:['数据概览','产品数据概览','从产品表现到直播间转化，把每一场销售看清楚。'],products:['产品表现','每一款产品，都看得清楚','比较产品、追踪转化，查看组合装与每场直播明细。'],stock:['备货计算','产品备货计划','综合产品的全部有效历史，预测订单并拆分组件备货。'],quality:['数据与口径','数据有来处，计算有依据','查看数据覆盖、待补信息和每一个指标的计算方式。']};
 function toast(message){$('toast').textContent=message;$('toast').classList.add('visible');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.remove('visible'),2600);}
 function updateSourceLink(){const url=state.page==='prices'?state.data?.priceCatalog?.sourceUrl:state.data?.sourceUrl;$('source-link').hidden=!url;if(url)$('source-link').href=url;}
 function navigate(page){if(!titles[page])page='overview';state.page=page;updateSourceLink();$('source-refresh-link').href=`http://localhost:4318/?from=share#${page}`;history.replaceState(null,'',`#${page}`);document.querySelectorAll('[data-page]').forEach(el=>{el.classList.toggle('active',el.dataset.page===page);if(el.dataset.page===page)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');});$('breadcrumb').textContent=titles[page][0];$('page-title').innerHTML=`${titles[page][1]}<span class="heading-dot">.</span>`;$('page-subtitle').textContent=titles[page][2];$('business-tabs').hidden=['stock','quality','prices'].includes(page);$('global-filters').hidden=['stock','quality','prices'].includes(page);$('range-tools').hidden=['stock','quality','prices'].includes(page);$('show-history').hidden=['stock','quality','prices'].includes(page);$('show-report').hidden=['stock','quality','prices'].includes(page);document.querySelectorAll('.page-view').forEach(n=>n.hidden=n.id!==`${page}-view`);render();if(matchMedia('(max-width:700px)').matches)requestAnimationFrame(()=>{const item=document.querySelector('.nav-item.active'),nav=item?.parentElement;if(nav&&nav.scrollWidth>nav.clientWidth)nav.scrollLeft+=item.getBoundingClientRect().left-nav.getBoundingClientRect().left-(nav.clientWidth-item.clientWidth)/2;});}

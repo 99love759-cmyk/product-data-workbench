@@ -1,11 +1,11 @@
-import {queryPrices} from './price-model.mjs?v=24';
-import {proposalColumns,proposalCategories,proposalValues,proposalFilename,createProposalWorkbook} from './proposal.mjs?v=24';
+import {queryPrices} from './price-model.mjs?v=25';
+import {proposalColumns,proposalCategories,proposalValues,proposalFilename,createProposalWorkbook} from './proposal.mjs?v=25';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const price=value=>typeof value==='number'?`¥${value.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:4})}`:value?esc(value):'<span class="price-missing">待补</span>';
 const date=value=>value?new Date(value).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}):'尚未同步';
 const fingerprint=entry=>JSON.stringify([entry.name,entry.mechanism,entry.supplier,entry.brand,entry.shippingCity,entry.sheetTitle,entry.livePrice,entry.barePrice,entry.deliveredPrice]);
 export function createPriceModule({element,dialog,icon,toast}){
- const state={catalog:null,search:'',sheet:'',supplier:'',status:'',sort:'source',page:1,selected:new Set(),drafts:{},photos:{},onlySelected:false};
+ const state={catalog:null,search:'',sheet:'',supplier:'',status:'',sort:'source-desc',page:1,selected:new Set(),drafts:{},photos:{},onlySelected:false};
  let templateFlight=null;
  const all=()=>state.catalog?.entries||[];
  const matched=()=>queryPrices(state.catalog,state).filter(e=>!state.onlySelected||state.selected.has(e.id));
@@ -41,9 +41,9 @@ export function createPriceModule({element,dialog,icon,toast}){
   const count=all().length,products=new Set(all().map(e=>e.name)).size,priced=all().filter(e=>typeof e.livePrice==='number').length;
   const suppliers=[...new Set(all().filter(e=>!state.sheet||e.sheetId===state.sheet).map(e=>e.supplier).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'zh-CN'));
   if(state.supplier&&!suppliers.includes(state.supplier))state.supplier='';
-  element.innerHTML=`<div class="price-intro"><div><span class="eyebrow">PRICE LIBRARY</span><h2>找到产品，也找到准确的报价。</h2><p>${products} 款产品 · ${count} 条规格报价 · ${state.catalog.sheets.length} 个子表</p></div><div class="price-sync">价格最近同步 <strong>${date(state.catalog.fetchedAt)}</strong></div></div>
+  element.innerHTML=`<div class="price-intro"><div><span class="eyebrow">PRODUCT LIBRARY</span><h2>找到产品，也找到准确的报价。</h2><p>${products} 款产品 · ${count} 条规格报价 · ${state.catalog.sheets.length} 个子表</p></div><div class="price-sync">价格最近同步 <strong>${date(state.catalog.fetchedAt)}</strong></div></div>
    <div class="price-sources" aria-label="价格子表筛选"><button data-price-sheet="" class="${!state.sheet?'active':''}"><span>全部子表</span><strong>${count}<small> 条报价</small></strong></button>${state.catalog.sheets.map((s,i)=>`<button data-price-sheet="${esc(s.id)}" class="${state.sheet===s.id?'active':''}" style="--price-accent:${['var(--blue)','var(--purple)','var(--green)'][i%3]}"><span>${esc(s.title)}</span><strong>${s.entries}<small> 条报价</small></strong></button>`).join('')}</div>
-   <article class="panel price-library"><div class="price-search"><label class="search-wrap">${icon('search')}<input id="price-search" type="search" placeholder="搜索产品名称、品牌、厂家、规格…" aria-label="搜索价格" value="${esc(state.search)}"></label><span class="price-search-hint">支持多个关键词，用空格分开</span></div><div class="price-filters"><label>厂家<select id="price-supplier" aria-label="价格厂家筛选"><option value="">全部厂家</option>${suppliers.map(v=>`<option value="${esc(v)}" ${state.supplier===v?'selected':''}>${esc(v)}</option>`).join('')}</select></label><label>直播价<select id="price-status" aria-label="报价完整状态"><option value="">全部报价</option><option value="priced" ${state.status==='priced'?'selected':''}>已填直播价</option><option value="missing" ${state.status==='missing'?'selected':''}>直播价待补</option></select></label><label>排序<select id="price-sort" aria-label="价格排序">${[['source','原表顺序'],['name','产品名称'],['price-asc','直播价从低到高'],['price-desc','直播价从高到低']].map(([v,t])=>`<option value="${v}" ${state.sort===v?'selected':''}>${t}</option>`).join('')}</select></label><button class="button quiet" data-price-reset>重置筛选</button></div><div id="price-selection"></div><div id="price-results" aria-live="polite"></div></article>
+   <article class="panel price-library"><div class="price-search"><label class="search-wrap">${icon('search')}<input id="price-search" type="search" placeholder="搜索产品名称、品牌、厂家、规格…" aria-label="搜索产品" value="${esc(state.search)}"></label><span class="price-search-hint">支持多个关键词，用空格分开</span></div><div class="price-filters"><label>厂家<select id="price-supplier" aria-label="价格厂家筛选"><option value="">全部厂家</option>${suppliers.map(v=>`<option value="${esc(v)}" ${state.supplier===v?'selected':''}>${esc(v)}</option>`).join('')}</select></label><label>直播价<select id="price-status" aria-label="报价完整状态"><option value="">全部报价</option><option value="priced" ${state.status==='priced'?'selected':''}>已填直播价</option><option value="missing" ${state.status==='missing'?'selected':''}>直播价待补</option></select></label><label>排序<select id="price-sort" aria-label="产品排序">${[['source-desc','原表倒序'],['source','原表顺序'],['name','产品名称'],['price-asc','直播价从低到高'],['price-desc','直播价从高到低']].map(([v,t])=>`<option value="${v}" ${state.sort===v?'selected':''}>${t}</option>`).join('')}</select></label><button class="button quiet" data-price-reset>重置筛选</button></div><div id="price-selection"></div><div id="price-results" aria-live="polite"></div></article>
    <p class="section-note">${priced} 条已填直播价，${count-priced} 条直播价待补。每行对应原表的一条规格报价，同名产品的不同机制和价格分别保留。价格明细可查看结算、运费和原表备注。</p><div class="proposal-note"><strong>按你的模板，一键下载提报表</strong><p>勾选所需规格，点击“生成提报表”。发货城市优先使用原表，缺失时可补充；现货库存留空，可在“补充提报信息”填写；默认混场、全国，其余指定字段填“\\”。公司、品牌和售后等默认填写；产品图片及付款比例图直接嵌入 Excel，可离线查看。</p><p class="price-photo-note">${state.catalog.imageInfo?.matched||0} / ${count} 条报价已匹配产品图片。产品图随原表同步并保存，手机、电脑均可查看，下载提报表自动嵌入。${state.catalog.imageInfo?.failed?esc(state.catalog.imageInfo.note):'原表未提供图片的产品可在“补充提报信息”上传图片，用于本次下载。'}</p></div>`;
   renderResults();
  }
@@ -87,7 +87,7 @@ export function createPriceModule({element,dialog,icon,toast}){
   const t=event.target.closest('button');if(!t)return;
   const find=id=>all().find(e=>e.id===id);
   if(t.dataset.priceSheet!==undefined){state.sheet=t.dataset.priceSheet;state.supplier='';state.page=1;render();}
-  if(t.hasAttribute('data-price-reset')){Object.assign(state,{search:'',sheet:'',supplier:'',status:'',sort:'source',onlySelected:false,page:1});render();}
+  if(t.hasAttribute('data-price-reset')){Object.assign(state,{search:'',sheet:'',supplier:'',status:'',sort:'source-desc',onlySelected:false,page:1});render();}
   if(t.hasAttribute('data-price-only')){state.onlySelected=!state.onlySelected;state.page=1;renderResults();}
   if(t.hasAttribute('data-price-clear')){state.selected.clear();renderResults();}
   if(t.hasAttribute('data-price-prev')){state.page--;renderResults();}

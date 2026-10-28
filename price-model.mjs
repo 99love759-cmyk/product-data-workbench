@@ -41,7 +41,7 @@ export function buildPriceCatalog(source,sourceUrl=''){
  }
  return {version:1,fetchedAt:source.fetchedAt,sourceUrl,sheets,entries};
 }
-export function queryPrices(catalog,{search='',sheet='',supplier='',status='',sort='source'}={}){
+export function queryPrices(catalog,{search='',sheet='',supplier='',status='',sort='source-desc'}={}){
  const words=text(search).normalize('NFKC').toLowerCase().split(/\s+/).filter(Boolean);
  const normalize=value=>key(value).toLowerCase();
  const rows=(catalog?.entries||[]).filter(entry=>{
@@ -50,6 +50,11 @@ export function queryPrices(catalog,{search='',sheet='',supplier='',status='',so
   const haystack=normalize([entry.sheetTitle,...entry.fields.map(f=>f.value)].join(' '));
   return words.every(word=>haystack.includes(normalize(word)));
  });
+ if(sort==='source'||sort==='source-desc'){
+  // Keep source tabs in their original order; reverse rows within each tab.
+  const ids=[...new Set([...(catalog?.sheets||[]).map(s=>s.id),...(catalog?.entries||[]).map(e=>e.sheetId)])],order=new Map(ids.map((id,i)=>[id,i]));
+  rows.sort((a,b)=>order.get(a.sheetId)-order.get(b.sheetId)||(sort==='source-desc'?b.row-a.row:a.row-b.row));
+ }
  if(sort==='name')rows.sort((a,b)=>a.name.localeCompare(b.name,'zh-CN')||a.row-b.row);
  if(sort==='price-asc'||sort==='price-desc')rows.sort((a,b)=>{
   const av=typeof a.livePrice==='number'?a.livePrice:null,bv=typeof b.livePrice==='number'?b.livePrice:null;
