@@ -167,7 +167,22 @@ export function dailySummaries(records) {
  return [...dates].map(([date,rows])=>({date,records:rows,...summarize(rows)})).sort((a,b)=>b.date.localeCompare(a.date));
 }
 
+export function predictSimilar(dataset,input){
+ const name=clean(input.targetName),reference=dataset.products.find(p=>p.key===input.referenceKey);
+ const target={key:'similar-target',name:name||'待估产品',group:'同类参考',bundle:false,components:[name||'待估产品']};
+ const targetComponents=[{name:target.name,supplier:'',quantity:1}];
+ const context={product:target,scope:'similar-history',targetComponents};
+ if(!reference)return {...context,error:'请选择一款已售卖的同类参考商品。'};
+ // Borrow only the reference product's orders/peak history. Its pack quantities,
+ // gifts and suppliers never become the new product's stock requirements.
+ const records=dataset.records.filter(r=>r.productKey===reference.key).map(r=>({...r,productKey:target.key,mechanismKey:'similar-target',components:targetComponents,totalQuantity:1,bundle:false}));
+ const result=predict({...dataset,products:[target],records},{...input,mode:'history',productKey:target.key,mechanismKey:'similar-target',audience:input.audience??0});
+ const quantity=number(input.quantities?.[target.name])??1;
+ return {...result,...context,reference:{key:reference.key,name:reference.name,group:reference.group,bundle:reference.bundle},mechanism:`${target.name} ×${quantity}`,suggestedAudience:null,referenceAudienceMedian:result.suggestedAudience,...(!name?{error:'请填写本次需要备货的产品名称。'}:{})};
+}
+
 export function predict(dataset,input) {
+ if(input.mode==='similar')return predictSimilar(dataset,input);
  const {productKey,mechanismKey='',audience=null,buffer=10,stock={},quantities={},customRate=null}=input;
  const product=dataset.products.find(p=>p.key===productKey);
  if(!product)return {error:'请从产品列表选择产品。'};

@@ -5,11 +5,11 @@ const definitions=[
  ['brand',['品牌']],['shippingCity',['发货城市','发货地址','发货地']],['category',['品类']],['nature',['产品性质']],['mechanism',['直播机制','直播机制(规格+数量)']],
  ['livePrice',['直播价']],['barePrice',['裸价']],['deliveredPrice',['含运价']],['margin',['平台毛利']],
  ['sold',['是否卖过']],['settlementUnit',['结算(最小单位)']],['quantity',['机制数量']],
- ['settlementOrder',['每单结算','每单结算(含运)']],['profitBeforeFreight',['每单利润(未扣减运费)']],
+ ['settlementOrder',['每单结算','每单结算(含运)']],['settlementBareOrder',['每单结算(不含运)']],['settlementIncludedOrder',['每单结算(含运)']],['profitBeforeFreight',['每单利润(未扣减运费)']],
  ['freightUnit',['运费(最小单位)']],['freightOrder',['机制运费']],['profitAfterFreight',['每单利润(扣减运费)']],
  ['profit',['每单利润']],['notes',['备注']]
 ];
-const numeric=new Set(['livePrice','barePrice','deliveredPrice','margin','settlementUnit','quantity','settlementOrder','profitBeforeFreight','freightUnit','freightOrder','profitAfterFreight','profit']);
+const numeric=new Set(['livePrice','barePrice','deliveredPrice','margin','settlementUnit','quantity','settlementOrder','settlementBareOrder','settlementIncludedOrder','profitBeforeFreight','freightUnit','freightOrder','profitAfterFreight','profit']);
 export function priceValue(value){
  if(value===null||value===undefined||text(value)==='')return null;
  if(typeof value==='number')return Number.isFinite(value)?value:null;
@@ -32,7 +32,7 @@ export function buildPriceCatalog(source,sourceUrl=''){
    for(const [field] of definitions){
     const col=columns[field],value=col<0?(numeric.has(field)?null:''):numeric.has(field)?priceValue(row[col]):text(row[col]);
     entry[field]=value;
-    if(col>=0)entry.fields.push({key:field,label:text(headers[col]),value});
+    if(col>=0&&!entry.fields.some(f=>key(f.label)===key(headers[col])))entry.fields.push({key:field,label:text(headers[col]),value});
    }
    // Keep each quoted mechanism and price as its own row, even for identical names.
    entries.push(entry);count++;

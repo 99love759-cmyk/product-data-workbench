@@ -1,5 +1,5 @@
-import {queryPrices} from './price-model.mjs?v=25';
-import {proposalColumns,proposalCategories,proposalValues,proposalFilename,createProposalWorkbook} from './proposal.mjs?v=25';
+import {queryPrices} from './price-model.mjs?v=26';
+import {proposalColumns,proposalCategories,proposalValues,proposalFilename,createProposalWorkbook} from './proposal.mjs?v=26';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const price=value=>typeof value==='number'?`¥${value.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:4})}`:value?esc(value):'<span class="price-missing">待补</span>';
 const date=value=>value?new Date(value).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}):'尚未同步';

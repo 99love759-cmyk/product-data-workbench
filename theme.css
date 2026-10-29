@@ -260,6 +260,12 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
 [data-theme] .system-name{color:var(--group-accent)}
 [data-theme] .cyan{color:var(--green)!important}
 [data-theme] .stock-grid{gap:26px}
+[data-theme] .stock-mode{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:5px;background:var(--soft);border:1px solid var(--line);border-radius:14px;max-width:430px;margin-bottom:20px}
+[data-theme] .stock-mode button{padding:12px 10px;font-size:13px;border-radius:10px;color:var(--muted)}
+[data-theme] .stock-mode button.active{background:var(--paper);color:var(--blue);box-shadow:0 2px 8px #0001;font-weight:600}
+[data-theme] .field>label{font-size:13px;font-weight:500;color:var(--text)}
+[data-theme] .reference-summary h2{margin-top:14px;overflow-wrap:anywhere}
+[data-theme] .reference-summary p{font-size:12px;line-height:1.9;color:var(--muted);margin-top:10px;overflow-wrap:anywhere}
 [data-theme] .field>span{color:var(--text);font-size:13px;font-weight:500}
 [data-theme] .field small,[data-theme] .form-intro,[data-theme] .field details summary{color:var(--muted);font-size:11px;line-height:1.8}
 [data-theme] .form-intro{margin-top:8px;margin-bottom:24px;font-size:12px}
