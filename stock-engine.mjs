@@ -1,4 +1,4 @@
-import {predict,number} from './model.mjs?v=27';
+import {predict,number} from './model.mjs?v=28';
 
 export const normalizeStockName=value=>String(value??'').normalize('NFKC').toLowerCase().replace(/[\s\p{P}\p{S}]/gu,'');
 const aliases=new Map([

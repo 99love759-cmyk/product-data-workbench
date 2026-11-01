@@ -838,6 +838,7 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
 }
 
 /* A product and an audience are the only required stock inputs. */
+.proposal-category-hint{display:block;font-size:11px;color:var(--muted);line-height:1.7;margin-top:6px;font-weight:400}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 [data-theme] .smart-stock-layout{display:grid;grid-template-columns:minmax(300px,.85fr) minmax(0,1.35fr);gap:24px;align-items:start}
 [data-theme] .smart-stock-inputs{padding:30px;min-width:0;overflow:visible}

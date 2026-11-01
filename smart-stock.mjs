@@ -1,4 +1,4 @@
-import {estimateStock,stockIndex,stockSuggestions,resolveStockTarget} from './stock-engine.mjs?v=27';
+import {estimateStock,stockIndex,stockSuggestions,resolveStockTarget} from './stock-engine.mjs?v=28';
 
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=v=>v==null?'—':Number(v).toLocaleString('zh-CN',{maximumFractionDigits:0});
