@@ -611,6 +611,8 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
 [data-theme] .price-product-name:hover{color:var(--blue)}
 [data-theme] .price-mechanism{color:var(--muted);font-size:11px;white-space:pre-line;line-height:1.8;margin-top:5px;min-width:150px;max-width:360px}
 [data-theme] .price-row-note{color:var(--orange);font-size:10px;white-space:pre-line;line-height:1.7;margin-top:6px;max-width:300px}
+[data-theme] .price-table .price-category{min-width:110px;max-width:160px;white-space:normal}
+[data-theme] .price-category-label{display:inline-block;border-radius:7px;background:var(--blue-soft);color:var(--text);padding:5px 9px;font-size:11px;line-height:1.6}
 [data-theme] .price-table .price-live{font-weight:600;font-size:16px;color:var(--blue)}
 [data-theme] .price-missing{font-size:10px;font-weight:400;color:var(--orange)}
 [data-theme] .price-source-cell{white-space:normal;min-width:140px;max-width:180px}
@@ -672,10 +674,12 @@ footer{border-color:#20354e;color:#587998;font-size:9px}.dialog-head{border-colo
  [data-theme] .price-product-name{min-width:0;max-width:none;font-size:13px}
  [data-theme] .price-mechanism{font-size:10px;min-width:0;max-width:none}
  [data-theme] .price-row-note{max-width:none;font-size:9px}
- [data-theme] .price-table td:nth-child(3)::before,[data-theme] .price-table td:nth-child(4)::before,[data-theme] .price-table td:nth-child(5)::before{display:block;font-size:9px;color:var(--muted);font-weight:400;margin-bottom:5px}
- [data-theme] .price-table td:nth-child(3)::before{content:'直播价'}
- [data-theme] .price-table td:nth-child(4)::before{content:'裸价 · 不含运'}
- [data-theme] .price-table td:nth-child(5)::before{content:'含运价'}
+ [data-theme] .price-table .price-category{grid-column:1/-1;max-width:none;display:flex;align-items:center;gap:8px}
+ [data-theme] .price-table .price-category::before{content:'品类';font-size:10px;color:var(--muted)}
+ [data-theme] .price-table .price-live::before,[data-theme] .price-table .price-bare::before,[data-theme] .price-table .price-delivered::before{display:block;font-size:9px;color:var(--muted);font-weight:400;margin-bottom:5px}
+ [data-theme] .price-table .price-live::before{content:'直播价'}
+ [data-theme] .price-table .price-bare::before{content:'裸价 · 不含运'}
+ [data-theme] .price-table .price-delivered::before{content:'含运价'}
  [data-theme] .price-table .price-live{font-size:16px}
  [data-theme] .price-source-cell{grid-column:1/-1;max-width:none}
  [data-theme] .price-source-cell small{display:inline;margin:0 0 0 9px;font-size:9px}
